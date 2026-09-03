@@ -1,0 +1,14 @@
+{
+  "name": "pingpong-server",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@hocuspocus/extension-sqlite": "^2.13.6",
+    "@hocuspocus/server": "^2.13.6"
+  }
+}

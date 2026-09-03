@@ -1,0 +1,36 @@
+services:
+  hocuspocus:
+    build: ./server
+    restart: unless-stopped
+    ports:
+      - "1234:1234"
+    volumes:
+      - pingpong_data:/data
+    environment:
+      - BRIDGE_URL=http://bridge:3002
+
+  bridge:
+    build: ./bridge
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-sonnet-4-6}
+      - HOCUSPOCUS_URL=ws://hocuspocus:1234
+      - BRIDGE_PORT=3002
+    depends_on:
+      - hocuspocus
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NEXT_PUBLIC_HOCUSPOCUS_URL=ws://localhost:1234
+    depends_on:
+      - hocuspocus
+
+volumes:
+  pingpong_data:
