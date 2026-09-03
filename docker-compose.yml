@@ -14,9 +14,12 @@ services:
     restart: unless-stopped
     ports:
       - "3002:3002"
+    extra_hosts:
+      - "tmkpi4:192.168.178.74"
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-sonnet-4-6}
+      - OPENWEBUI_API_KEY=${OPENWEBUI_API_KEY}
+      - OPENWEBUI_BASE_URL=${OPENWEBUI_BASE_URL:-http://tmkpi4:3000/openai}
+      - LLM_MODEL=${LLM_MODEL:-qwen3-30b-a3b-instruct-2507}
       - HOCUSPOCUS_URL=ws://hocuspocus:1234
       - BRIDGE_PORT=3002
     depends_on:
@@ -26,9 +29,10 @@ services:
     build: ./frontend
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "4750:3000"
     environment:
       - NEXT_PUBLIC_HOCUSPOCUS_URL=ws://localhost:1234
+      - PORT=3000
     depends_on:
       - hocuspocus
 

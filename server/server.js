@@ -1,19 +1,14 @@
-import { Server } from '@hocuspocus/server'
+import { Hocuspocus } from '@hocuspocus/server'
 import { SQLite } from '@hocuspocus/extension-sqlite'
 import { mkdir } from 'fs/promises'
 
 await mkdir('/data', { recursive: true })
 
-const server = new Server({
+const server = new Hocuspocus({
   port: 1234,
   quiet: false,
 
-  async onAuthenticate({ token }) {
-    // No auth for now — accept all connections
-    // TODO: add token auth later
-  },
-
-  async onConnect({ documentName, connection }) {
+  async onConnect({ documentName }) {
     console.log(`[connect] doc="${documentName}"`)
   },
 
@@ -21,12 +16,12 @@ const server = new Server({
     console.log(`[disconnect] doc="${documentName}"`)
   },
 
-  async onChange({ documentName, document }) {
-    // Check if a new ping task was added
-    const tasks = document.getMap('pings')
-    tasks.observe((event) => {
+  // Set up the ping observer once per document load (not on every change)
+  async onLoadDocument({ documentName, document }) {
+    const pingMap = document.getMap('pings')
+    pingMap.observe((event) => {
       event.keysChanged.forEach((key) => {
-        const ping = tasks.get(key)
+        const ping = pingMap.get(key)
         if (ping?.status === 'pending') {
           console.log(`[ping] doc="${documentName}" id="${key}" instruction="${ping.instruction}"`)
           notifyBridge({ documentName, pingId: key, ping })
@@ -36,9 +31,7 @@ const server = new Server({
   },
 
   extensions: [
-    new SQLite({
-      database: '/data/pingpong.sqlite',
-    }),
+    new SQLite({ database: '/data/pingpong.sqlite' }),
   ],
 })
 

@@ -7,7 +7,6 @@
     "start": "node bridge.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.56.0",
     "@hocuspocus/provider": "^2.13.6",
     "yjs": "^13.6.27"
   }
