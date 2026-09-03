@@ -2,78 +2,72 @@
 
 <img src="assets/logo.svg" width="60" alt="Pingpong Logo"/>
 
-Collaborative real-time editor for human + AI. Highlight text, leave an instruction — Claude picks it up automatically and writes back live.
+Collaborative real-time editor for human + AI. Highlight text, leave an instruction — the AI picks it up automatically and writes back live.
 
-**Ping:** you select text and send an instruction.  
-**Pong:** Claude's revision appears in your editor, tracked and ready to accept or reject.
-
-## What it is
-
-A focused co-writing tool, not a wiki or note app. Open a document, write together with Claude, see every change live.
-
-- Claude's cursor appears in your editor with a name label
-- Select text → add instruction → Claude rewrites it automatically (`ping`)
-- Changes appear as tracked diffs — accept or reject per change (`pong`)
-- Comment sidebar for general back-and-forth
+**Ping:** select text, type an instruction.  
+**Pong:** the revision appears in your editor immediately.
 
 ## Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Editor | [TipTap 3](https://tiptap.dev) + Yjs |
+| Editor | [TipTap](https://tiptap.dev) + Yjs (CRDT) |
 | Collab backend | [Hocuspocus](https://github.com/ueberdosis/hocuspocus) + SQLite |
-| Frontend | Next.js 15 + Tailwind CSS |
-| AI bridge | Node.js + Anthropic SDK |
-| Deployment | Docker Compose |
+| Frontend | Next.js 15 (standalone) |
+| AI bridge | Node.js, OpenAI-compatible API |
+| Deployment | Docker Compose, port 4750 |
 
-## Getting Started
+## Setup
 
 ```bash
 cp .env.example .env
-# Add your ANTHROPIC_API_KEY to .env
+# Fill in your values:
+#   OPENWEBUI_API_KEY=...
+#   OPENWEBUI_BASE_URL=http://your-host:3000/openai
+#   LLM_MODEL=your-model-name
 
 docker compose up -d
 ```
 
-Open `http://localhost:3001` in your browser.
-
-## Development
-
-```bash
-# Run services individually
-cd server && npm install && npm run dev
-cd frontend && npm install && npm run dev
-cd bridge && npm install && npm run dev
-```
+Open `http://localhost:4750`.
 
 ## How a ping works
 
 ```
-User selects text + writes instruction
+User selects text + types instruction → Enter
         ↓
-POST /ping { docId, selection, instruction, context }
+Ping written into Yjs shared map (pings)
         ↓
-Claude API processes the task
+Hocuspocus observer detects status='pending'
         ↓
-DirectConnection writes result into Yjs document
+HTTP POST → bridge /ping
         ↓
-User sees change live — tracked, accept / reject
+Bridge calls LLM (OpenAI-compatible API)
+        ↓
+Bridge writes revision into Y.XmlFragment via Hocuspocus
+        ↓
+All connected clients see the change live
 ```
 
-## Project Structure
+## Project structure
 
 ```
-├── server/      Hocuspocus WebSocket server (Yjs CRDT + SQLite)
-├── frontend/    Next.js app (TipTap editor, UI)
-├── bridge/      AI bridge — handles /ping, calls Claude, writes pong back
+├── server/      Hocuspocus WebSocket server (Yjs CRDT + SQLite persistence)
+├── bridge/      AI bridge — receives pings, calls LLM, applies revision
+├── frontend/    Next.js app (TipTap editor + ping bubble + inline chat)
 ├── assets/      Logo, icons
-├── docs/        Feature specs, architecture notes
-└── data/        SQLite database (gitignored)
+├── docs/        Feature specs
+└── .env         API keys (gitignored)
 ```
 
-## Features
+## Environment variables
 
-See [docs/features.md](docs/features.md) for the full feature list and status.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OPENWEBUI_API_KEY` | — | Bearer token for LLM API |
+| `OPENWEBUI_BASE_URL` | `http://tmkpi4:3000/openai` | OpenAI-compatible base URL |
+| `LLM_MODEL` | `qwen3-30b-a3b-instruct-2507` | Model name |
+| `NEXT_PUBLIC_HOCUSPOCUS_URL` | `ws://localhost:1234` | WebSocket URL (browser-side) |
 
 ## License
 
