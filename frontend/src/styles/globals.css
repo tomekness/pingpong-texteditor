@@ -249,9 +249,9 @@ body {
 .collaboration-cursor__caret { position: relative; margin-left: -1px; margin-right: -1px; border-left: 2px solid; pointer-events: none; word-break: normal; }
 .collaboration-cursor__label { position: absolute; top: -1.4em; left: -1px; padding: 1px 5px; border-radius: 3px; font-family: var(--font-ui); font-size: 0.7rem; font-weight: 500; white-space: nowrap; pointer-events: none; color: white; }
 
-/* Tracked changes */
-.tracked-add { background: var(--added); }
-.tracked-del { background: var(--removed); text-decoration: line-through; color: var(--text-muted); }
+/* Tracked changes — rendered in the editor text */
+.tracked-add { background: rgba(80, 160, 80, 0.18); color: #3A7A3A; }
+.tracked-del { background: rgba(180, 60, 60, 0.14); text-decoration: line-through; color: #A04040; }
 
 /* Active ping highlight */
 .ping-highlight {
@@ -357,6 +357,42 @@ body {
 
 .chat-msg.user .chat-label { color: #CCC5B5; }
 .chat-msg.assistant .chat-label { color: var(--cursor-ai); }
+
+/* Diff view (before/after) */
+.chat-diff {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 0;
+  border-radius: 5px;
+}
+
+.diff-row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  line-height: 1.55;
+}
+
+.diff-label {
+  flex-shrink: 0;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  width: 48px;
+  color: #555;
+}
+
+.diff-removed {
+  color: #C47B7B;
+  text-decoration: line-through;
+  opacity: 0.85;
+}
+
+.diff-added {
+  color: #6BAE6B;
+}
 
 .inline-chat-actions {
   display: flex;

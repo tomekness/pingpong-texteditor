@@ -2,8 +2,8 @@ import { HocuspocusProvider } from '@hocuspocus/provider'
 import * as Y from 'yjs'
 
 const API_KEY        = process.env.OPENWEBUI_API_KEY
-const BASE_URL       = process.env.OPENWEBUI_BASE_URL || 'http://tmkpi4:3000/openai'
-const MODEL          = process.env.LLM_MODEL || 'qwen3-30b-a3b-instruct-2507'
+const BASE_URL       = process.env.OPENWEBUI_BASE_URL
+const MODEL          = process.env.LLM_MODEL || 'gpt-4o-mini'
 const HOCUSPOCUS_URL = process.env.HOCUSPOCUS_URL || 'ws://hocuspocus:1234'
 const PORT           = parseInt(process.env.BRIDGE_PORT || '3002')
 
@@ -45,9 +45,13 @@ async function handlePing({ documentName, pingId, ping }) {
     url: HOCUSPOCUS_URL,
     name: documentName,
     document: ydoc,
+    token: 'internal',
   })
 
-  await new Promise((resolve) => provider.on('synced', resolve))
+  await new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('sync timeout')), 15_000)
+    provider.on('synced', () => { clearTimeout(t); resolve() })
+  })
 
   const pingMap = ydoc.getMap('pings')
   pingMap.set(pingId, { ...ping, status: 'working' })
@@ -111,18 +115,19 @@ Antworte NUR mit dem überarbeiteten Text — keine Erklärung, keine Anführung
   return data.choices[0].message.content.trim()
 }
 
-// ── Apply Revision in Y.XmlFragment (TipTap's Yjs format) ───────────────────
+// ── Apply Tracked Change in Y.XmlFragment (keeps original + revision visible) ─
 function applyRevision(xmlFragment, ping, revision) {
   const target = ping.selectedText
 
   function walk(el) {
-    // Use constructor name to avoid instanceof cross-module issues
     if (el?.constructor?.name === 'YXmlText') {
       const content = el.toString()
       const idx = content.indexOf(target)
       if (idx !== -1) {
-        el.delete(idx, target.length)
-        el.insert(idx, revision)
+        // Mark original text as to-be-deleted (red strikethrough)
+        el.format(idx, target.length, { trackedDelete: true })
+        // Insert revision text as to-be-inserted (green) right after
+        el.insert(idx + target.length, revision, { trackedInsert: true })
         return true
       }
     } else if (el && typeof el.toArray === 'function') {
@@ -134,6 +139,8 @@ function applyRevision(xmlFragment, ping, revision) {
   }
 
   if (!walk(xmlFragment)) {
-    console.warn(`[ping] Text not found in doc: "${target.slice(0, 60)}"`)
+    console.warn(`[ping] ⚠ text not found in doc: "${target.slice(0, 60)}"`)
+  } else {
+    console.log(`[ping] ✎ tracked: "${target.slice(0, 40)}" → "${revision.slice(0, 40)}"`)
   }
 }

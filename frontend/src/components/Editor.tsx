@@ -15,6 +15,7 @@ import PingBubble from './PingBubble'
 import InlineChat from './InlineChat'
 import Toolbar from './Toolbar'
 import { InlineChatExtension, updateInlineChatDecorations, PingHighlightExtension, updatePingHighlights } from '@/lib/inlineChatPlugin'
+import { TrackedDelete, TrackedInsert } from '@/lib/trackedChanges'
 
 const HOCUSPOCUS_URL =
   typeof window !== 'undefined'
@@ -87,6 +88,8 @@ export default function Editor({ docId }: { docId: string }) {
       }),
       Placeholder.configure({ placeholder: 'Start writing…' }),
       Typography,
+      TrackedDelete,
+      TrackedInsert,
       InlineChatExtension,
       PingHighlightExtension,
     ],
@@ -155,7 +158,7 @@ export default function Editor({ docId }: { docId: string }) {
     <>
       <div className="topbar">
         <Link href="/" className="topbar-logo" title="Back to home">
-          <img src="/logo.svg" alt="Pingpong" width={28} height={28} />
+          <img src="/logo.svg" alt="Pingpong" width={28} height={28} fetchPriority="low" />
         </Link>
         <div className="topbar-meta">
           <span className={`agent-status ${connected ? 'live' : 'idle'}`}>

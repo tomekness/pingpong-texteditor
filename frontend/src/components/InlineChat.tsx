@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import * as Y from 'yjs'
+import { commitRevision, revertRevision } from '@/lib/trackedChanges'
 
 interface InlineChatProps {
   pingId: string
@@ -25,12 +26,14 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
   }
 
   const acceptPing = () => {
+    commitRevision(ydoc)
     const pingMap = ydoc.getMap('pings')
     const current = pingMap.get(pingId) as any
     pingMap.set(pingId, { ...current, status: 'accepted' })
   }
 
   const rejectPing = () => {
+    revertRevision(ydoc)
     const pingMap = ydoc.getMap('pings')
     const current = pingMap.get(pingId) as any
     pingMap.set(pingId, { ...current, status: 'rejected' })
@@ -47,24 +50,36 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
         </div>
         {(ping.messages || []).map((msg: any, i: number) => (
           <div key={i} className={`chat-msg ${msg.role}`}>
-            <span className="chat-label">{msg.role === 'user' ? 'Du' : 'Claude'}</span>
+            <span className="chat-label">{msg.role === 'user' ? 'You' : 'Claude'}</span>
             <span>{msg.text}</span>
           </div>
         ))}
-        {ping.status === 'pending' && (
-          <div className="chat-msg thinking">Claude schreibt…</div>
+        {(ping.status === 'pending' || ping.status === 'working') && (
+          <div className="chat-msg thinking">Claude is thinking…</div>
+        )}
+        {ping.status === 'answered' && ping.revision && (
+          <div className="chat-diff">
+            <div className="diff-row">
+              <span className="diff-label">Before</span>
+              <span className="diff-removed">{ping.selectedText}</span>
+            </div>
+            <div className="diff-row">
+              <span className="diff-label">After</span>
+              <span className="diff-added">{ping.revision}</span>
+            </div>
+          </div>
         )}
       </div>
       <div className="inline-chat-actions">
-        <button className="btn-accept" onClick={acceptPing}>✓ Annehmen</button>
-        <button className="btn-reject" onClick={rejectPing}>✗ Ablehnen</button>
+        <button className="btn-accept" onClick={acceptPing}>✓ Accept</button>
+        <button className="btn-reject" onClick={rejectPing}>✗ Reject</button>
       </div>
       <div className="inline-chat-input">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-          placeholder="Antwort oder Korrektur…"
+          placeholder="Reply or correction…"
         />
       </div>
     </div>
