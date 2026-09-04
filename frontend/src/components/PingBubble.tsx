@@ -12,6 +12,7 @@ interface PingBubbleProps {
 
 export default function PingBubble({ editor, docId, ydoc }: PingBubbleProps) {
   const [bubble, setBubble] = useState<{ top: number; left: number } | null>(null)
+  const [active, setActive] = useState(false)
   const [instruction, setInstruction] = useState('')
   const [sending, setSending] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -21,9 +22,8 @@ export default function PingBubble({ editor, docId, ydoc }: PingBubbleProps) {
 
     const handleSelectionUpdate = () => {
       const { from, to } = editor.state.selection
-      if (from === to) { setBubble(null); return }
+      if (from === to) { setBubble(null); setActive(false); return }
 
-      // Position bubble near the selection
       const domSelection = window.getSelection()
       if (!domSelection || domSelection.rangeCount === 0) return
       const range = domSelection.getRangeAt(0)
@@ -34,15 +34,36 @@ export default function PingBubble({ editor, docId, ydoc }: PingBubbleProps) {
         top: rect.top - editorRect.top - 8,
         left: rect.right - editorRect.left + 8,
       })
+      setActive(false)
+    }
+
+    // Tab on the editor DOM focuses the ping input when bubble is visible
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Tab' && bubble) {
+        e.preventDefault()
+        setActive(true)
+        setTimeout(() => inputRef.current?.focus(), 0)
+      }
     }
 
     editor.on('selectionUpdate', handleSelectionUpdate)
-    return () => { editor.off('selectionUpdate', handleSelectionUpdate) }
-  }, [editor])
+    editor.view.dom.addEventListener('keydown', handleKeyDown)
+    return () => {
+      editor.off('selectionUpdate', handleSelectionUpdate)
+      editor.view.dom.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [editor, bubble])
 
-  useEffect(() => {
-    if (bubble) inputRef.current?.focus()
-  }, [bubble])
+  const activate = () => setActive(true)
+
+  const activateWithFocus = () => {
+    setActive(true)
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }
+
+  const deactivate = () => {
+    if (!instruction) setActive(false)
+  }
 
   const sendPing = async () => {
     if (!editor || !instruction.trim()) return
@@ -50,8 +71,6 @@ export default function PingBubble({ editor, docId, ydoc }: PingBubbleProps) {
 
     const { from, to } = editor.state.selection
     const selectedText = editor.state.doc.textBetween(from, to, ' ')
-
-    // Get surrounding context (paragraph before + after)
     const context = editor.getText()
 
     const pingId = `ping-${Date.now()}`
@@ -70,6 +89,7 @@ export default function PingBubble({ editor, docId, ydoc }: PingBubbleProps) {
 
     setInstruction('')
     setBubble(null)
+    setActive(false)
     setSending(false)
   }
 
@@ -77,27 +97,36 @@ export default function PingBubble({ editor, docId, ydoc }: PingBubbleProps) {
 
   return (
     <div
-      className="ping-bubble"
+      className={`ping-bubble ${active ? 'ping-bubble--active' : 'ping-bubble--hint'}`}
       style={{ top: bubble.top, left: bubble.left }}
       onMouseDown={(e) => e.preventDefault()}
+      onClick={activateWithFocus}
+      onMouseEnter={activate}
+      onMouseLeave={deactivate}
     >
-      <div className="ping-bubble-label">🏓 Ping</div>
-      <input
-        ref={inputRef}
-        className="ping-bubble-input"
-        placeholder="Anweisung für Claude…"
-        value={instruction}
-        onChange={(e) => setInstruction(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') sendPing()
-          if (e.key === 'Escape') setBubble(null)
-        }}
-        disabled={sending}
-      />
-      {instruction && (
-        <button className="ping-send-btn" onClick={sendPing} disabled={sending}>
-          {sending ? '…' : '→'}
-        </button>
+      <div className="ping-bubble-label">🏓</div>
+      {active ? (
+        <>
+          <input
+            ref={inputRef}
+            className="ping-bubble-input"
+            placeholder="Instruction for Claude…"
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') sendPing()
+              if (e.key === 'Escape') { setActive(false); setInstruction('') }
+            }}
+            disabled={sending}
+          />
+          {instruction && (
+            <button className="ping-send-btn" onClick={sendPing} disabled={sending}>
+              {sending ? '…' : '→'}
+            </button>
+          )}
+        </>
+      ) : (
+        <span className="ping-bubble-hint">Tab or hover</span>
       )}
     </div>
   )

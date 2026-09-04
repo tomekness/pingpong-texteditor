@@ -65,9 +65,8 @@ All connected clients see the change live
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `OPENWEBUI_API_KEY` | — | Bearer token for LLM API |
-| `OPENWEBUI_BASE_URL` | `http://tmkpi4:3000/openai` | OpenAI-compatible base URL |
-| `LLM_MODEL` | `qwen3-30b-a3b-instruct-2507` | Model name |
-| `NEXT_PUBLIC_HOCUSPOCUS_URL` | `ws://localhost:1234` | WebSocket URL (browser-side) |
+| `OPENWEBUI_BASE_URL` | — | OpenAI-compatible base URL, e.g. `http://192.168.x.x:3000/openai` |
+| `LLM_MODEL` | `gpt-4o-mini` | Model name passed to the API |
 
 ## License
 

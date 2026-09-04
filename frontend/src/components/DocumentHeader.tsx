@@ -14,7 +14,7 @@ export default function DocumentHeader({ docId, connected, pings }: DocumentHead
       <input
         className="doc-title-input"
         defaultValue={docId === 'new' ? '' : docId}
-        placeholder="Dokument-Titel"
+        placeholder="Document title"
         spellCheck={false}
       />
       <div className="doc-meta-bar">
@@ -22,7 +22,7 @@ export default function DocumentHeader({ docId, connected, pings }: DocumentHead
           {connected ? '● Claude live' : '○ Claude idle'}
         </span>
         {openPings > 0 && (
-          <span className="open-pings">{openPings} offene {openPings === 1 ? 'Ping' : 'Pings'}</span>
+          <span className="open-pings">{openPings} open {openPings === 1 ? 'ping' : 'pings'}</span>
         )}
       </div>
     </div>

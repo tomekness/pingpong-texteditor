@@ -1,9 +1,18 @@
 services:
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "4750:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - hocuspocus
+
   hocuspocus:
     build: ./server
     restart: unless-stopped
-    ports:
-      - "1234:1234"
     volumes:
       - pingpong_data:/data
     environment:
@@ -12,14 +21,10 @@ services:
   bridge:
     build: ./bridge
     restart: unless-stopped
-    ports:
-      - "3002:3002"
-    extra_hosts:
-      - "tmkpi4:192.168.178.74"
     environment:
       - OPENWEBUI_API_KEY=${OPENWEBUI_API_KEY}
-      - OPENWEBUI_BASE_URL=${OPENWEBUI_BASE_URL:-http://tmkpi4:3000/openai}
-      - LLM_MODEL=${LLM_MODEL:-qwen3-30b-a3b-instruct-2507}
+      - OPENWEBUI_BASE_URL=${OPENWEBUI_BASE_URL}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini}
       - HOCUSPOCUS_URL=ws://hocuspocus:1234
       - BRIDGE_PORT=3002
     depends_on:
@@ -28,10 +33,7 @@ services:
   frontend:
     build: ./frontend
     restart: unless-stopped
-    ports:
-      - "4750:3000"
     environment:
-      - NEXT_PUBLIC_HOCUSPOCUS_URL=ws://localhost:1234
       - PORT=3000
     depends_on:
       - hocuspocus

@@ -2,8 +2,8 @@
 
 Live-Editor für Mensch + AI. Text markieren, Auftrag geben (**ping**) — AI schreibt Revision live zurück (**pong**).
 
-**Deployment:** Docker Compose auf X280, Port 4750  
-**LLM:** Open WebUI auf tmkpi4:3000 (OpenAI-kompatibel), kein Anthropic API Key
+**Deployment:** Docker Compose, Port 4750  
+**LLM:** Any OpenAI-compatible API (set via `OPENWEBUI_BASE_URL` in `.env`)
 
 ---
 

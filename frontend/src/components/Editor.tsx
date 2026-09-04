@@ -119,7 +119,7 @@ export default function Editor({ docId }: { docId: string }) {
       el: mountsRef.current.get(pingId)!,
     }))
     updateInlineChatDecorations(editor.view, mounts)
-  }, [editor, activeChats.map(([id]) => id).join(',')])
+  }, [editor, pings])
 
   useEffect(() => {
     if (!editor) return
