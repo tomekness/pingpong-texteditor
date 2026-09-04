@@ -55,7 +55,7 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
           </div>
         ))}
         {(ping.status === 'pending' || ping.status === 'working') && (
-          <div className="chat-msg thinking">Claude is thinking…</div>
+          <div className="chat-msg thinking">Opponent is thinking…</div>
         )}
         {ping.status === 'answered' && ping.revision && (
           <div className="chat-diff">

@@ -19,7 +19,7 @@ export default function DocumentHeader({ docId, connected, pings }: DocumentHead
       />
       <div className="doc-meta-bar">
         <span className={`agent-status ${connected ? 'live' : 'idle'}`}>
-          {connected ? '● Claude live' : '○ Claude idle'}
+          {connected ? '● Opponent live' : '○ Opponent offline'}
         </span>
         {openPings > 0 && (
           <span className="open-pings">{openPings} open {openPings === 1 ? 'ping' : 'pings'}</span>

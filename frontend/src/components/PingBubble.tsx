@@ -110,7 +110,7 @@ export default function PingBubble({ editor, docId, ydoc }: PingBubbleProps) {
           <input
             ref={inputRef}
             className="ping-bubble-input"
-            placeholder="Instruction for Claude…"
+            placeholder="Instruction for Opponent…"
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
             onKeyDown={(e) => {
