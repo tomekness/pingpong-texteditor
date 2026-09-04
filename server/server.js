@@ -1,8 +1,16 @@
 import { Hocuspocus } from '@hocuspocus/server'
 import { SQLite } from '@hocuspocus/extension-sqlite'
 import { mkdir } from 'fs/promises'
+import { createServer } from 'http'
+import { createRequire } from 'module'
+import * as Y from 'yjs'
+
+const require = createRequire(import.meta.url)
+
 
 await mkdir('/data', { recursive: true })
+
+// ── Hocuspocus WebSocket server ───────────────────────────────────────────────
 
 const server = new Hocuspocus({
   port: 1234,
@@ -16,7 +24,6 @@ const server = new Hocuspocus({
     console.log(`[disconnect] doc="${documentName}"`)
   },
 
-  // Set up the ping observer once per document load (not on every change)
   async onLoadDocument({ documentName, document }) {
     const pingMap = document.getMap('pings')
     pingMap.observe((event) => {
@@ -50,3 +57,90 @@ async function notifyBridge({ documentName, pingId, ping }) {
 
 server.listen()
 console.log(`[server] Hocuspocus running on ws://0.0.0.0:1234`)
+
+// ── HTTP API server (document list / delete) ──────────────────────────────────
+
+const sqlite3 = require('sqlite3')
+
+const DB_PATH = '/data/pingpong.sqlite'
+const API_PORT = parseInt(process.env.API_PORT || '1235')
+
+function openDb() {
+  return new sqlite3.Database(DB_PATH, sqlite3.OPEN_READWRITE)
+}
+
+function dbAll(db, sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows))
+  })
+}
+
+function dbRun(db, sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, (err) => err ? reject(err) : resolve())
+  })
+}
+
+function extractTitle(data, fallback) {
+  try {
+    const ydoc = new Y.Doc()
+    Y.applyUpdate(ydoc, Buffer.isBuffer(data) ? data : Buffer.from(data))
+    const title = ydoc.getMap('meta').get('title')
+    ydoc.destroy()
+    return title || fallback
+  } catch {
+    return fallback
+  }
+}
+
+createServer(async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, DELETE, OPTIONS')
+  res.setHeader('Content-Type', 'application/json')
+
+  if (req.method === 'OPTIONS') { res.writeHead(204).end(); return }
+
+  const url = new URL(req.url, 'http://x')
+
+  if (req.method === 'GET' && url.pathname === '/docs') {
+    const db = openDb()
+    try {
+      const rows = await dbAll(db, 'SELECT name, data FROM documents ORDER BY rowid DESC')
+      const docs = rows.map((row) => ({
+        id: row.name,
+        title: extractTitle(row.data, row.name),
+        updatedAt: null,
+      }))
+      res.writeHead(200)
+      res.end(JSON.stringify(docs))
+    } catch (err) {
+      res.writeHead(500)
+      res.end(JSON.stringify({ error: err.message }))
+    } finally {
+      db.close()
+    }
+    return
+  }
+
+  const match = url.pathname.match(/^\/docs\/(.+)$/)
+  if (req.method === 'DELETE' && match) {
+    const name = decodeURIComponent(match[1])
+    const db = openDb()
+    try {
+      await dbRun(db, 'DELETE FROM documents WHERE name = ?', [name])
+      res.writeHead(200)
+      res.end(JSON.stringify({ ok: true }))
+    } catch (err) {
+      res.writeHead(500)
+      res.end(JSON.stringify({ error: err.message }))
+    } finally {
+      db.close()
+    }
+    return
+  }
+
+  res.writeHead(404)
+  res.end(JSON.stringify({ error: 'Not found' }))
+}).listen(API_PORT, () => {
+  console.log(`[api] HTTP API running on :${API_PORT}`)
+})

@@ -4,5 +4,5 @@ COPY package.json .
 RUN npm install
 COPY server.js .
 VOLUME ["/data"]
-EXPOSE 1234
+EXPOSE 1234 1235
 CMD ["node", "server.js"]

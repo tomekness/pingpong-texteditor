@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@hocuspocus/extension-sqlite": "^2.13.6",
-    "@hocuspocus/server": "^2.13.6"
+    "@hocuspocus/server": "^2.13.6",
+    "yjs": "^13.6.0"
   }
 }

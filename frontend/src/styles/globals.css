@@ -2,7 +2,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:          #F5F0E8;
+  --bg:          #F2F2F0;
   --bg-dark:     #111111;
   --text:        #1A1A1A;
   --text-muted:  #7A7060;
@@ -13,8 +13,10 @@
   --added:       rgba(100, 160, 100, 0.25);
   --removed:     rgba(180, 80, 80, 0.2);
   --ping-bubble: #FFFFFF;
-  --font:        'Georgia', 'Times New Roman', serif;
+  --font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-ui:     system-ui, -apple-system, sans-serif;
+  --topbar-h:    48px;
+  --toolbar-h:   48px;
 }
 
 body {
@@ -22,6 +24,77 @@ body {
   color: var(--text);
   font-family: var(--font);
   min-height: 100vh;
+}
+
+/* ─── Top Bar ───────────────────────────────────────── */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--topbar-h);
+  background: #ffffff;
+  border-bottom: 1px solid #E8E8E6;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  z-index: 100;
+}
+
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+.topbar-logo:hover { opacity: 1; }
+
+.topbar-meta {
+  display: flex;
+  flex: 1;
+  gap: 14px;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.agent-status.live { color: #5A9E5A; }
+.agent-status.idle { color: #888; opacity: 0.8; }
+.open-pings { color: var(--cursor-ai); }
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.save-indicator {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+.save-indicator--saved  { color: #5A9E5A; }
+.save-indicator--saving { color: var(--text-muted); }
+.save-indicator--offline { color: #B88; }
+
+.topbar-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  border-radius: 5px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.topbar-icon-btn:hover {
+  background: rgba(0,0,0,0.06);
+  color: var(--text);
 }
 
 /* ─── Home ─────────────────────────────────────────── */
@@ -47,7 +120,25 @@ body {
 
 .doc-list { display: flex; flex-direction: column; gap: 2px; }
 
+.doc-loading {
+  padding: 14px 16px;
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.doc-item-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+}
+
+.doc-item-row:hover .doc-delete-btn { opacity: 1; }
+.doc-item-row:hover .doc-item { background: rgba(0,0,0,0.04); }
+
 .doc-item {
+  flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -59,26 +150,54 @@ body {
   transition: background 0.1s;
 }
 
-.doc-item:hover { background: rgba(0,0,0,0.04); }
+.doc-delete-btn {
+  position: absolute;
+  right: 8px;
+  opacity: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.15rem;
+  line-height: 1;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.12s, color 0.12s, background 0.12s;
+}
+.doc-delete-btn:hover {
+  color: #c0392b;
+  background: rgba(192, 57, 43, 0.1);
+}
 
 .doc-title { font-size: 0.95rem; }
 .doc-meta  { font-size: 0.8rem; color: var(--text-muted); }
 
 .doc-new {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
   color: var(--text-muted);
+  font-family: var(--font-ui);
   font-size: 0.9rem;
   margin-top: 8px;
+  padding: 14px 16px;
+  border-radius: 6px;
+  transition: background 0.1s, color 0.1s;
 }
+.doc-new:hover { background: rgba(0,0,0,0.04); color: var(--text); }
 
 /* ─── Editor Wrapper ────────────────────────────────── */
 .editor-wrapper {
   max-width: 720px;
   margin: 0 auto;
-  padding: 40px 24px 120px;
+  padding: calc(var(--topbar-h) + 32px) 24px calc(var(--toolbar-h) + 48px);
 }
-
-/* ─── Document Header ───────────────────────────────── */
-.doc-header { margin-bottom: 32px; }
 
 .doc-title-input {
   width: 100%;
@@ -90,24 +209,11 @@ body {
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.03em;
-  margin-bottom: 8px;
+  margin-bottom: 24px;
 }
-
 .doc-title-input::placeholder { color: var(--border); }
 
-.doc-meta-bar {
-  display: flex;
-  gap: 16px;
-  font-family: var(--font-ui);
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.agent-status.live { color: #5A9E5A; }
-.agent-status.idle { color: var(--text-muted); }
-.open-pings { color: var(--cursor-ai); }
-
-/* ─── Editor Content ────────────────────────────────── */
+/* ─── Editor Area ───────────────────────────────────── */
 .editor-area { position: relative; }
 
 .editor-content {
@@ -147,6 +253,14 @@ body {
 .tracked-add { background: var(--added); }
 .tracked-del { background: var(--removed); text-decoration: line-through; color: var(--text-muted); }
 
+/* Active ping highlight */
+.ping-highlight {
+  background: rgba(255, 196, 0, 0.28);
+  border-radius: 2px;
+  outline: 1.5px solid rgba(255, 196, 0, 0.5);
+  outline-offset: 1px;
+}
+
 /* ─── Ping Bubble ────────────────────────────────────── */
 .ping-bubble {
   position: absolute;
@@ -159,7 +273,26 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: opacity 0.1s, min-width 0.15s;
+  cursor: default;
+}
+
+.ping-bubble--hint {
+  min-width: auto;
+  opacity: 0.55;
+}
+.ping-bubble--hint:hover { opacity: 1; }
+
+.ping-bubble--active {
   min-width: 260px;
+  opacity: 1;
+}
+
+.ping-bubble-hint {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .ping-bubble-label {
@@ -191,14 +324,16 @@ body {
   font-size: 0.9rem;
 }
 
-/* ─── Inline Chat ────────────────────────────────────── */
+/* ─── Inline Chat (in-flow block) ───────────────────── */
 .inline-chat {
-  margin: 8px 0 16px 48px;
+  display: block;
+  width: 100%;
   background: var(--bg-dark);
   border-radius: 8px;
   padding: 16px;
   font-family: var(--font-ui);
   font-size: 0.85rem;
+  margin: 12px 0;
 }
 
 .inline-chat-messages { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
@@ -257,3 +392,44 @@ body {
 
 .inline-chat-input input::placeholder { color: #555; }
 .inline-chat-input input:focus { border-color: #444; }
+
+/* ─── Formatting Toolbar ─────────────────────────────── */
+.toolbar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #1A1A1A;
+  border-radius: 10px;
+  padding: 6px 8px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+  z-index: 100;
+}
+
+.toolbar-btn {
+  background: transparent;
+  border: none;
+  color: #CCC5B5;
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  min-width: 28px;
+  text-align: center;
+}
+
+.toolbar-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.toolbar-btn--active { background: rgba(255,255,255,0.15); color: #fff; }
+
+.toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: #333;
+  margin: 0 4px;
+}
