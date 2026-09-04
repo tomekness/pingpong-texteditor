@@ -37,6 +37,10 @@ const server = new Hocuspocus({
     })
   },
 
+  async onChange({ documentName }) {
+    touchMeta(documentName)
+  },
+
   extensions: [
     new SQLite({ database: '/data/pingpong.sqlite' }),
   ],
@@ -81,6 +85,23 @@ function dbRun(db, sql, params = []) {
   })
 }
 
+let metaTableReady = false
+async function touchMeta(name) {
+  const db = openDb()
+  try {
+    if (!metaTableReady) {
+      await dbRun(db, `CREATE TABLE IF NOT EXISTS document_meta (name TEXT PRIMARY KEY, updated_at TEXT)`)
+      metaTableReady = true
+    }
+    await dbRun(db, `INSERT INTO document_meta (name, updated_at) VALUES (?, datetime('now'))
+      ON CONFLICT(name) DO UPDATE SET updated_at = datetime('now')`, [name])
+  } catch (err) {
+    console.error('[meta] Failed to update timestamp:', err.message)
+  } finally {
+    db.close()
+  }
+}
+
 function extractTitle(data, fallback) {
   try {
     const ydoc = new Y.Doc()
@@ -92,6 +113,21 @@ function extractTitle(data, fallback) {
     return fallback
   }
 }
+
+// Initialize meta table (DB created by SQLite extension on first doc write)
+async function initMetaTable() {
+  try {
+    const db = openDb()
+    await dbRun(db, `CREATE TABLE IF NOT EXISTS document_meta (name TEXT PRIMARY KEY, updated_at TEXT)`)
+    metaTableReady = true
+    db.close()
+    console.log('[api] document_meta table ready')
+  } catch (err) {
+    console.warn('[api] document_meta init deferred:', err.message)
+    setTimeout(initMetaTable, 3000)
+  }
+}
+initMetaTable()
 
 createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -105,11 +141,16 @@ createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/docs') {
     const db = openDb()
     try {
-      const rows = await dbAll(db, 'SELECT name, data FROM documents ORDER BY rowid DESC')
+      const rows = await dbAll(db, `
+        SELECT d.name, d.data, m.updated_at
+        FROM documents d
+        LEFT JOIN document_meta m ON d.name = m.name
+        ORDER BY COALESCE(m.updated_at, '') DESC, d.rowid DESC
+      `)
       const docs = rows.map((row) => ({
         id: row.name,
         title: extractTitle(row.data, row.name),
-        updatedAt: null,
+        updatedAt: row.updated_at ? row.updated_at + 'Z' : null,
       }))
       res.writeHead(200)
       res.end(JSON.stringify(docs))

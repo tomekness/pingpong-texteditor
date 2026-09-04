@@ -50,7 +50,7 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
         </div>
         {(ping.messages || []).map((msg: any, i: number) => (
           <div key={i} className={`chat-msg ${msg.role}`}>
-            <span className="chat-label">{msg.role === 'user' ? 'You' : 'Claude'}</span>
+            <span className="chat-label">{msg.role === 'user' ? 'You' : 'Opponent'}</span>
             <span>{msg.text}</span>
           </div>
         ))}

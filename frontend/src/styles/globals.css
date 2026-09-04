@@ -107,15 +107,24 @@ body {
 .home-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 40px;
+  gap: 16px;
+  margin-bottom: 48px;
 }
 
 .home-header h1 {
   font-family: var(--font-ui);
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.home-tagline {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  letter-spacing: 0;
 }
 
 .doc-list { display: flex; flex-direction: column; gap: 2px; }
@@ -177,20 +186,22 @@ body {
 .doc-meta  { font-size: 0.8rem; color: var(--text-muted); }
 
 .doc-new {
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-align: left;
+  display: block;
   width: 100%;
-  color: var(--text-muted);
+  text-align: left;
+  cursor: pointer;
   font-family: var(--font-ui);
-  font-size: 0.9rem;
-  margin-top: 8px;
-  padding: 14px 16px;
-  border-radius: 6px;
-  transition: background 0.1s, color 0.1s;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text);
+  background: rgba(0,0,0,0.05);
+  border: none;
+  border-radius: 7px;
+  padding: 13px 16px;
+  margin-bottom: 20px;
+  transition: background 0.1s;
 }
-.doc-new:hover { background: rgba(0,0,0,0.04); color: var(--text); }
+.doc-new:hover { background: rgba(0,0,0,0.09); }
 
 /* ─── Editor Wrapper ────────────────────────────────── */
 .editor-wrapper {

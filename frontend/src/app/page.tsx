@@ -52,10 +52,16 @@ export default function Home() {
   return (
     <main className="home">
       <div className="home-header">
-        <img src="/logo.svg" alt="Pingpong" width={36} height={36} />
-        <h1>Pingpong</h1>
+        <img src="/logo.svg" alt="Pingpong" width={48} height={48} fetchPriority="low" />
+        <div>
+          <h1>Pingpong</h1>
+          <p className="home-tagline">Collaborative text editing with your LLM</p>
+        </div>
       </div>
       <div className="doc-list">
+        <button onClick={newDoc} className="doc-new">
+          + New document
+        </button>
         {loading && (
           <div className="doc-loading">Loading…</div>
         )}
@@ -78,9 +84,6 @@ export default function Home() {
             </button>
           </div>
         ))}
-        <button onClick={newDoc} className="doc-item doc-new">
-          + New document
-        </button>
       </div>
     </main>
   )

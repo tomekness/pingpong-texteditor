@@ -1,5 +1,6 @@
 import { Mark } from '@tiptap/core'
 import * as Y from 'yjs'
+import { XmlText } from 'yjs'
 
 // ── TipTap mark extensions ────────────────────────────────────────────────────
 
@@ -49,7 +50,7 @@ function processTextNode(el: any, accept: boolean) {
 }
 
 function walkAndProcess(el: any, accept: boolean) {
-  if (el?.constructor?.name === 'YXmlText') {
+  if (el instanceof XmlText) {
     processTextNode(el, accept)
   } else if (el && typeof el.toArray === 'function') {
     for (const child of el.toArray()) {

@@ -120,7 +120,7 @@ function applyRevision(xmlFragment, ping, revision) {
   const target = ping.selectedText
 
   function walk(el) {
-    if (el?.constructor?.name === 'YXmlText') {
+    if (el instanceof Y.XmlText) {
       const content = el.toString()
       const idx = content.indexOf(target)
       if (idx !== -1) {
