@@ -13,6 +13,7 @@ export default function WelcomeOverlay({ onStart }: WelcomeOverlayProps) {
           <div>
             <h1 className="overlay-title">Pingpong</h1>
             <p className="overlay-sub">Write. Challenge. Revise.</p>
+            <p className="overlay-sub2">Collaborative text editing with your LLM opponent</p>
           </div>
         </div>
 
@@ -48,14 +49,10 @@ export default function WelcomeOverlay({ onStart }: WelcomeOverlayProps) {
         </p>
 
         <div className="overlay-footer">
-          <a
-            className="overlay-link"
-            href="https://github.com/tomekness/pingpong"
-            target="_blank"
-            rel="noreferrer"
-          >
-            GitHub ↗
-          </a>
+          <div className="overlay-links">
+            <a className="overlay-link" href="https://github.com/tomekness/pingpong" target="_blank" rel="noreferrer">GitHub ↗</a>
+            <a className="overlay-link" href="https://experiments.tomekness.de" target="_blank" rel="noreferrer">experiments.tomekness.de ↗</a>
+          </div>
           <button className="overlay-start-btn" onClick={onStart}>
             Start writing →
           </button>

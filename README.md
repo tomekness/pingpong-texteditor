@@ -32,8 +32,8 @@ Visit the app and you land on a fresh document with a unique, unguessable URL. N
 ```bash
 cp .env.example .env
 # Fill in your values:
-#   OPENWEBUI_API_KEY=...
-#   OPENWEBUI_BASE_URL=http://your-host:3000/openai
+#   LLM_API_KEY=...
+#   LLM_BASE_URL=http://your-host:3000/openai
 #   LLM_MODEL=your-model-name
 
 docker compose up -d
@@ -73,8 +73,8 @@ All connected clients see the change live — accept or reject inline
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OPENWEBUI_API_KEY` | — | Bearer token for LLM API |
-| `OPENWEBUI_BASE_URL` | — | OpenAI-compatible base URL, e.g. `http://192.168.x.x:3000/openai` |
+| `LLM_API_KEY` | — | Bearer token for your LLM API |
+| `LLM_BASE_URL` | — | OpenAI-compatible base URL, e.g. `http://192.168.x.x:3000/openai` |
 | `LLM_MODEL` | `gpt-4o-mini` | Model name passed to the API |
 
 ## License

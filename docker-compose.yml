@@ -22,8 +22,8 @@ services:
     build: ./bridge
     restart: unless-stopped
     environment:
-      - OPENWEBUI_API_KEY=${OPENWEBUI_API_KEY}
-      - OPENWEBUI_BASE_URL=${OPENWEBUI_BASE_URL}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_BASE_URL=${LLM_BASE_URL}
       - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini}
       - HOCUSPOCUS_URL=ws://hocuspocus:1234
       - BRIDGE_PORT=3002

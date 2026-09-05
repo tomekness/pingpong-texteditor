@@ -573,8 +573,22 @@ body {
 
 .overlay-sub {
   font-family: var(--font-ui);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.overlay-sub2 {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
   color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.overlay-links {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 /* ─── Ping-Pong Demo ────────────────────────────────── */
