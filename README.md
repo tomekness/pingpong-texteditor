@@ -103,6 +103,7 @@ For providers that don't require authentication, set `LLM_API_KEY=none` (the bri
 | `LLM_API_KEY` | — | Bearer token for your LLM API |
 | `LLM_BASE_URL` | — | OpenAI-compatible base URL (see table above) |
 | `LLM_MODEL` | `gpt-4o-mini` | Model name passed to the API |
+| `ADMIN_PASSWORD` | — | Password for the admin dashboard at `/admin` |
 
 ## License
 

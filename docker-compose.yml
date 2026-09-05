@@ -17,6 +17,7 @@ services:
       - pingpong_data:/data
     environment:
       - BRIDGE_URL=http://bridge:3002
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
 
   bridge:
     build: ./bridge

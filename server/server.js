@@ -7,6 +7,7 @@ import * as Y from 'yjs'
 
 const require = createRequire(import.meta.url)
 
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
 
 await mkdir('/data', { recursive: true })
 
@@ -31,6 +32,7 @@ const server = new Hocuspocus({
         const ping = pingMap.get(key)
         if (ping?.status === 'pending') {
           console.log(`[ping] doc="${documentName}" id="${key}" instruction="${ping.instruction}"`)
+          logPing(documentName, key)
           notifyBridge({ documentName, pingId: key, ping })
         }
       })
@@ -85,6 +87,18 @@ function dbRun(db, sql, params = []) {
   })
 }
 
+async function logPing(docName, pingId) {
+  const db = openDb()
+  try {
+    await dbRun(db, `CREATE TABLE IF NOT EXISTS ping_log (id INTEGER PRIMARY KEY AUTOINCREMENT, doc_name TEXT, ping_id TEXT, created_at TEXT DEFAULT (datetime('now')))`)
+    await dbRun(db, `INSERT INTO ping_log (doc_name, ping_id) VALUES (?, ?)`, [docName, pingId])
+  } catch (err) {
+    console.error('[ping_log] Failed:', err.message)
+  } finally {
+    db.close()
+  }
+}
+
 let metaTableReady = false
 async function touchMeta(name) {
   const db = openDb()
@@ -119,11 +133,12 @@ async function initMetaTable() {
   try {
     const db = openDb()
     await dbRun(db, `CREATE TABLE IF NOT EXISTS document_meta (name TEXT PRIMARY KEY, updated_at TEXT)`)
+    await dbRun(db, `CREATE TABLE IF NOT EXISTS ping_log (id INTEGER PRIMARY KEY AUTOINCREMENT, doc_name TEXT, ping_id TEXT, created_at TEXT DEFAULT (datetime('now')))`)
     metaTableReady = true
     db.close()
-    console.log('[api] document_meta table ready')
+    console.log('[api] tables ready')
   } catch (err) {
-    console.warn('[api] document_meta init deferred:', err.message)
+    console.warn('[api] table init deferred:', err.message)
     setTimeout(initMetaTable, 3000)
   }
 }
@@ -206,6 +221,48 @@ createServer(async (req, res) => {
         db.close()
       }
     })
+    return
+  }
+
+  if (req.method === 'GET' && url.pathname === '/admin/stats') {
+    if (!ADMIN_PASSWORD) {
+      res.writeHead(503).end(JSON.stringify({ error: 'ADMIN_PASSWORD not configured' }))
+      return
+    }
+    if (req.headers['authorization'] !== `Bearer ${ADMIN_PASSWORD}`) {
+      res.writeHead(401).end(JSON.stringify({ error: 'Unauthorized' }))
+      return
+    }
+    const db = openDb()
+    try {
+      const [{ total }]       = await dbAll(db, `SELECT COUNT(*) as total FROM documents`)
+      const [{ today }]       = await dbAll(db, `SELECT COUNT(*) as today FROM document_meta WHERE updated_at >= datetime('now', '-1 day')`)
+      const [{ week }]        = await dbAll(db, `SELECT COUNT(*) as week  FROM document_meta WHERE updated_at >= datetime('now', '-7 days')`)
+      const [{ pingsTotal }]  = await dbAll(db, `SELECT COUNT(*) as pingsTotal FROM ping_log`).catch(() => [{ pingsTotal: 0 }])
+      const [{ pingsToday }]  = await dbAll(db, `SELECT COUNT(*) as pingsToday FROM ping_log WHERE created_at >= datetime('now', '-1 day')`).catch(() => [{ pingsToday: 0 }])
+      const [{ pingsWeek }]   = await dbAll(db, `SELECT COUNT(*) as pingsWeek  FROM ping_log WHERE created_at >= datetime('now', '-7 days')`).catch(() => [{ pingsWeek: 0 }])
+      const recent = await dbAll(db, `
+        SELECT d.name, m.updated_at,
+          (SELECT COUNT(*) FROM ping_log p WHERE p.doc_name = d.name) as pings
+        FROM documents d
+        LEFT JOIN document_meta m ON d.name = m.name
+        ORDER BY COALESCE(m.updated_at, '') DESC
+        LIMIT 30
+      `)
+      res.writeHead(200).end(JSON.stringify({
+        docs:  { total, today, week, live: server.documents?.size ?? 0 },
+        pings: { total: pingsTotal, today: pingsToday, week: pingsWeek },
+        recent: recent.map(r => ({
+          id: r.name,
+          updatedAt: r.updated_at ? r.updated_at + 'Z' : null,
+          pings: r.pings,
+        })),
+      }))
+    } catch (err) {
+      res.writeHead(500).end(JSON.stringify({ error: err.message }))
+    } finally {
+      db.close()
+    }
     return
   }
 
