@@ -72,6 +72,19 @@ All connected clients see the change live — accept or reject inline
 └── .env         API keys (gitignored)
 ```
 
+## Admin dashboard
+
+Visit `/admin` for an overview of usage stats — password-protected, no document IDs exposed.
+
+| Metric | What it shows |
+|--------|--------------|
+| Documents — Total | All docs currently stored in the database |
+| Documents — Active today / this week | Docs with edits in the last 24 h / 7 days |
+| Documents — Live now | Open WebSocket connections at this moment |
+| Pings — Total / today / this week | LLM requests sent via the ping bubble |
+
+Set `ADMIN_PASSWORD` in `.env` and restart. The dashboard auto-refreshes every 30 seconds.
+
 ## LLM compatibility
 
 The bridge sends a standard OpenAI chat completions request:
