@@ -550,19 +550,20 @@ body {
   padding: 32px 36px;
 }
 
-.overlay-logo {
-  display: block;
-  margin-bottom: 16px;
-  opacity: 0.85;
+.overlay-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
 }
 
 .overlay-title {
   font-family: var(--font-ui);
-  font-size: 1.9rem;
+  font-size: 1.55rem;
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--text);
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 
 .overlay-title--sm {
@@ -572,34 +573,96 @@ body {
 
 .overlay-sub {
   font-family: var(--font-ui);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
-  margin-bottom: 28px;
 }
 
-.overlay-steps {
+/* ─── Ping-Pong Demo ────────────────────────────────── */
+.overlay-demo {
+  background: #F5F3EF;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.demo-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.demo-side {
   font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding-top: 9px;
+  min-width: 52px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.demo-row--pong .demo-side { color: var(--cursor-ai); }
+
+.demo-bubble {
+  font-family: var(--font);
   font-size: 0.88rem;
   line-height: 1.6;
   color: var(--text);
-  padding-left: 1.3em;
-  margin-bottom: 24px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  flex: 1;
+  border: 1px solid var(--border);
+}
+
+.demo-bubble--opponent {
+  background: #111;
+  border-color: #222;
+  color: #CCC5B5;
+}
+
+.demo-mark {
+  background: rgba(255, 196, 0, 0.35);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.demo-instruction {
+  display: block;
+  margin-top: 5px;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.demo-net {
+  text-align: center;
+  font-size: 1rem;
+  padding: 6px 0;
+  opacity: 0.6;
+}
+
+.demo-btns {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  gap: 6px;
+  margin-top: 8px;
 }
 
-.overlay-steps li { padding-left: 4px; }
-
-.overlay-steps kbd {
-  font-family: monospace;
-  font-size: 0.8em;
-  background: #E8E4DC;
-  border: 1px solid #CCC5B5;
-  border-radius: 3px;
-  padding: 0 4px;
-  color: var(--text);
+.demo-accept, .demo-reject {
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: none;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  cursor: default;
 }
+.demo-accept { background: #2A4A2A; color: #8BAF8B; }
+.demo-reject { background: #3A2020; color: #C47B7B; }
 
 .overlay-note {
   font-family: var(--font-ui);

@@ -8,19 +8,43 @@ export default function WelcomeOverlay({ onStart }: WelcomeOverlayProps) {
   return (
     <div className="overlay-backdrop" onClick={onStart}>
       <div className="overlay-card" onClick={e => e.stopPropagation()}>
-        <img className="overlay-logo" src="/logo.svg" alt="Pingpong" width={40} height={40} />
-        <h1 className="overlay-title">Pingpong</h1>
-        <p className="overlay-sub">Collaborative text editing with your LLM opponent</p>
+        <div className="overlay-header">
+          <img src="/logo.svg" alt="Pingpong" width={36} height={36} />
+          <div>
+            <h1 className="overlay-title">Pingpong</h1>
+            <p className="overlay-sub">Write. Challenge. Revise.</p>
+          </div>
+        </div>
 
-        <ol className="overlay-steps">
-          <li>Write or paste text in the editor</li>
-          <li>Select a passage — a ping bubble appears to the right. Hover or press <kbd>Tab</kbd> to send an instruction to the Opponent</li>
-          <li>Review tracked changes inline — accept or reject each suggestion</li>
-          <li>Copy the URL to share this document with anyone</li>
-        </ol>
+        <div className="overlay-demo">
+          <div className="demo-row demo-row--ping">
+            <span className="demo-side">You</span>
+            <div className="demo-bubble demo-bubble--user">
+              <span>The meeting lasted </span>
+              <mark className="demo-mark">forever and nobody left happy</mark>
+              <span>.</span>
+              <span className="demo-instruction">→ &ldquo;Make it punchy&rdquo;</span>
+            </div>
+          </div>
+          <div className="demo-net">🏓</div>
+          <div className="demo-row demo-row--pong">
+            <span className="demo-side">Opponent</span>
+            <div className="demo-bubble demo-bubble--opponent">
+              <span>The meeting lasted </span>
+              <span className="tracked-del">forever and nobody left happy</span>
+              <span> </span>
+              <span className="tracked-add">way too long</span>
+              <span>.</span>
+              <div className="demo-btns">
+                <button className="demo-accept" tabIndex={-1}>✓ Accept</button>
+                <button className="demo-reject" tabIndex={-1}>✗ Reject</button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <p className="overlay-note">
-          No account needed. Content is automatically removed after 1 hour of inactivity.
+          No account needed. Share the URL — anyone with the link can edit. Content is removed after 1 hour of inactivity.
         </p>
 
         <div className="overlay-footer">
