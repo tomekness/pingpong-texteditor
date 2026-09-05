@@ -241,22 +241,9 @@ createServer(async (req, res) => {
       const [{ pingsTotal }]  = await dbAll(db, `SELECT COUNT(*) as pingsTotal FROM ping_log`).catch(() => [{ pingsTotal: 0 }])
       const [{ pingsToday }]  = await dbAll(db, `SELECT COUNT(*) as pingsToday FROM ping_log WHERE created_at >= datetime('now', '-1 day')`).catch(() => [{ pingsToday: 0 }])
       const [{ pingsWeek }]   = await dbAll(db, `SELECT COUNT(*) as pingsWeek  FROM ping_log WHERE created_at >= datetime('now', '-7 days')`).catch(() => [{ pingsWeek: 0 }])
-      const recent = await dbAll(db, `
-        SELECT d.name, m.updated_at,
-          (SELECT COUNT(*) FROM ping_log p WHERE p.doc_name = d.name) as pings
-        FROM documents d
-        LEFT JOIN document_meta m ON d.name = m.name
-        ORDER BY COALESCE(m.updated_at, '') DESC
-        LIMIT 30
-      `)
       res.writeHead(200).end(JSON.stringify({
         docs:  { total, today, week, live: server.documents?.size ?? 0 },
         pings: { total: pingsTotal, today: pingsToday, week: pingsWeek },
-        recent: recent.map(r => ({
-          id: r.name,
-          updatedAt: r.updated_at ? r.updated_at + 'Z' : null,
-          pings: r.pings,
-        })),
       }))
     } catch (err) {
       res.writeHead(500).end(JSON.stringify({ error: err.message }))

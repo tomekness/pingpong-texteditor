@@ -5,17 +5,6 @@ import { useEffect, useState, useCallback } from 'react'
 interface Stats {
   docs:  { total: number; today: number; week: number; live: number }
   pings: { total: number; today: number; week: number }
-  recent: { id: string; updatedAt: string | null; pings: number }[]
-}
-
-function formatDate(s: string | null) {
-  if (!s) return '—'
-  try {
-    return new Date(s).toLocaleString(undefined, {
-      day: '2-digit', month: '2-digit', year: '2-digit',
-      hour: '2-digit', minute: '2-digit',
-    })
-  } catch { return s }
 }
 
 function StatCard({ label, value, sub }: { label: string; value: number; sub?: string }) {
@@ -146,36 +135,6 @@ export default function AdminPage() {
             </div>
           </section>
 
-          <section className="admin-section">
-            <h2 className="admin-section-title">Recent documents</h2>
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Document ID</th>
-                  <th>Last active</th>
-                  <th>Pings</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.recent.map(doc => (
-                  <tr key={doc.id}>
-                    <td className="admin-doc-id">{doc.id}</td>
-                    <td>{formatDate(doc.updatedAt)}</td>
-                    <td>{doc.pings}</td>
-                    <td>
-                      <a className="admin-doc-link" href={`/doc/${doc.id}`} target="_blank" rel="noreferrer">
-                        Open ↗
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-                {stats.recent.length === 0 && (
-                  <tr><td colSpan={4} className="admin-empty">No documents yet</td></tr>
-                )}
-              </tbody>
-            </table>
-          </section>
         </div>
       )}
 
