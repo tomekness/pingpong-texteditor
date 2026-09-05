@@ -30,6 +30,9 @@ Visit the app and you land on a fresh document with a unique, unguessable URL. N
 ## Setup
 
 ```bash
+git clone https://github.com/tomekness/pingpong
+cd pingpong
+
 cp .env.example .env
 # Fill in your values:
 #   LLM_API_KEY=...
