@@ -164,11 +164,13 @@ createServer(async (req, res) => {
   }
 
   const match = url.pathname.match(/^\/docs\/(.+)$/)
+
   if (req.method === 'DELETE' && match) {
     const name = decodeURIComponent(match[1])
     const db = openDb()
     try {
       await dbRun(db, 'DELETE FROM documents WHERE name = ?', [name])
+      await dbRun(db, 'DELETE FROM document_meta WHERE name = ?', [name])
       res.writeHead(200)
       res.end(JSON.stringify({ ok: true }))
     } catch (err) {
@@ -177,6 +179,33 @@ createServer(async (req, res) => {
     } finally {
       db.close()
     }
+    return
+  }
+
+  // Restore a doc from a Yjs binary snapshot (used after inactivity expiry)
+  if (req.method === 'POST' && match) {
+    const name = decodeURIComponent(match[1])
+    const chunks = []
+    req.on('data', chunk => chunks.push(chunk))
+    req.on('end', async () => {
+      const data = Buffer.concat(chunks)
+      if (!data.length) { res.writeHead(400).end(JSON.stringify({ error: 'Empty body' })); return }
+      const db = openDb()
+      try {
+        await dbRun(db,
+          `INSERT INTO documents (name, data) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET data = ?`,
+          [name, data, data]
+        )
+        await touchMeta(name)
+        res.writeHead(200)
+        res.end(JSON.stringify({ ok: true }))
+      } catch (err) {
+        res.writeHead(500)
+        res.end(JSON.stringify({ error: err.message }))
+      } finally {
+        db.close()
+      }
+    })
     return
   }
 

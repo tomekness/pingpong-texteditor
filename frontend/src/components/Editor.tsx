@@ -10,17 +10,21 @@ import { HocuspocusProvider } from '@hocuspocus/provider'
 import * as Y from 'yjs'
 import { useMemo, useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import Link from 'next/link'
 import PingBubble from './PingBubble'
 import InlineChat from './InlineChat'
 import Toolbar from './Toolbar'
+import WelcomeOverlay from './WelcomeOverlay'
+import DeleteConfirmOverlay from './DeleteConfirmOverlay'
+import InactivityOverlay from './InactivityOverlay'
 import { InlineChatExtension, updateInlineChatDecorations, PingHighlightExtension, updatePingHighlights } from '@/lib/inlineChatPlugin'
-import { TrackedDelete, TrackedInsert } from '@/lib/trackedChanges'
+import { TrackedDelete, TrackedInsert, TrackedChangesHunkButtons } from '@/lib/trackedChanges'
 
 const HOCUSPOCUS_URL =
   typeof window !== 'undefined'
     ? `ws://${window.location.host}/ws`
     : 'ws://localhost/ws'
+
+const INACTIVITY_MS = 3 * 60 * 1000 // 3 min (set to 60 * 60 * 1000 for production)
 
 export default function Editor({ docId }: { docId: string }) {
   const [connected, setConnected] = useState(false)
@@ -28,8 +32,18 @@ export default function Editor({ docId }: { docId: string }) {
   const [title, setTitle] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'offline'>('offline')
   const [copied, setCopied] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return !sessionStorage.getItem(`welcomed-${docId}`)
+  })
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showInactivity, setShowInactivity] = useState(false)
+
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const mountsRef = useRef<Map<string, HTMLDivElement>>(new Map())
+  const snapshotRef = useRef<ArrayBuffer | null>(null)
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const inactivityFiredRef = useRef(false)
 
   const ydoc = useMemo(() => new Y.Doc(), [])
   const provider = useMemo(() => new HocuspocusProvider({
@@ -40,6 +54,35 @@ export default function Editor({ docId }: { docId: string }) {
     onConnect: () => { setConnected(true); setSaveStatus('saved') },
     onDisconnect: () => { setConnected(false); setSaveStatus('offline') },
   }), [docId, ydoc])
+
+  // Inactivity timer — deletes doc from server after 1 hour of no user interaction
+  useEffect(() => {
+    const fire = async () => {
+      if (inactivityFiredRef.current) return
+      inactivityFiredRef.current = true
+      const arr = Y.encodeStateAsUpdate(ydoc)
+      snapshotRef.current = arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength) as ArrayBuffer
+      try {
+        await fetch(`/api/docs/${encodeURIComponent(docId)}`, { method: 'DELETE' })
+      } catch {}
+      setShowInactivity(true)
+    }
+
+    const reset = () => {
+      if (inactivityFiredRef.current) return
+      clearTimeout(inactivityTimerRef.current)
+      inactivityTimerRef.current = setTimeout(fire, INACTIVITY_MS)
+    }
+
+    const events = ['keydown', 'mousemove', 'click', 'wheel', 'touchstart'] as const
+    events.forEach(e => window.addEventListener(e, reset, { passive: true }))
+    reset()
+
+    return () => {
+      events.forEach(e => window.removeEventListener(e, reset))
+      clearTimeout(inactivityTimerRef.current)
+    }
+  }, [docId, ydoc])
 
   // Sync title from/to Yjs meta map
   useEffect(() => {
@@ -90,6 +133,7 @@ export default function Editor({ docId }: { docId: string }) {
       Typography,
       TrackedDelete,
       TrackedInsert,
+      TrackedChangesHunkButtons.configure({ ydoc }),
       InlineChatExtension,
       PingHighlightExtension,
     ],
@@ -144,11 +188,30 @@ export default function Editor({ docId }: { docId: string }) {
     })
   }, [])
 
-  const refreshDoc = useCallback(() => {
-    window.location.reload()
-  }, [])
+  const dismissWelcome = useCallback(() => {
+    sessionStorage.setItem(`welcomed-${docId}`, '1')
+    setShowWelcome(false)
+  }, [docId])
 
-  const displayTitle = title ?? (docId !== 'new' ? docId : '')
+  const handleDeleteConfirm = useCallback(async () => {
+    try {
+      await fetch(`/api/docs/${encodeURIComponent(docId)}`, { method: 'DELETE' })
+    } catch {}
+    window.location.href = '/'
+  }, [docId])
+
+  const handleRestore = useCallback(async () => {
+    if (snapshotRef.current) {
+      try {
+        await fetch(`/api/docs/${encodeURIComponent(docId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: snapshotRef.current,
+        })
+      } catch {}
+    }
+    window.location.reload()
+  }, [docId])
 
   const saveLabel =
     saveStatus === 'saving' ? 'Saving…' :
@@ -157,9 +220,9 @@ export default function Editor({ docId }: { docId: string }) {
   return (
     <>
       <div className="topbar">
-        <Link href="/" className="topbar-logo" title="Back to home">
+        <div className="topbar-logo">
           <img src="/logo.svg" alt="Pingpong" width={28} height={28} fetchPriority="low" />
-        </Link>
+        </div>
         <div className="topbar-meta">
           <span className={`agent-status ${connected ? 'live' : 'idle'}`}>
             {connected ? '● Opponent live' : '○ Opponent offline'}
@@ -188,15 +251,17 @@ export default function Editor({ docId }: { docId: string }) {
             )}
           </button>
           <button
-            className="topbar-icon-btn"
-            onClick={refreshDoc}
-            title="Reload document"
-            aria-label="Reload document"
+            className="topbar-icon-btn topbar-icon-btn--delete"
+            onClick={() => setShowDeleteConfirm(true)}
+            title="Delete document"
+            aria-label="Delete document"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="1 4 1 10 7 10" />
-              <polyline points="23 20 23 14 17 14" />
-              <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
             </svg>
           </button>
         </div>
@@ -205,7 +270,7 @@ export default function Editor({ docId }: { docId: string }) {
       <div className="editor-wrapper">
         <input
           className="doc-title-input"
-          value={displayTitle}
+          value={title ?? ''}
           onChange={handleTitleChange}
           placeholder="Document title"
           spellCheck={false}
@@ -226,6 +291,20 @@ export default function Editor({ docId }: { docId: string }) {
           el
         )
       })}
+
+      {showWelcome && <WelcomeOverlay onStart={dismissWelcome} />}
+      {showDeleteConfirm && (
+        <DeleteConfirmOverlay
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDeleteConfirm}
+        />
+      )}
+      {showInactivity && (
+        <InactivityOverlay
+          onRestore={handleRestore}
+          onFresh={() => { window.location.href = '/' }}
+        />
+      )}
     </>
   )
 }

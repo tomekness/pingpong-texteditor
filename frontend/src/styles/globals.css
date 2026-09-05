@@ -264,6 +264,34 @@ body {
 .tracked-add { background: rgba(80, 160, 80, 0.18); color: #3A7A3A; }
 .tracked-del { background: rgba(180, 60, 60, 0.14); text-decoration: line-through; color: #A04040; }
 
+/* Per-hunk accept / reject buttons (inline in editor) */
+.hunk-actions {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 3px;
+  vertical-align: middle;
+  user-select: none;
+}
+.hunk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 3px;
+  font-size: 9px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  font-family: var(--font-ui);
+  transition: background 0.1s;
+}
+.hunk-accept { background: #2A4A2A; color: #8BAF8B; }
+.hunk-reject { background: #3A2020; color: #C47B7B; }
+.hunk-accept:hover { background: #3A5A3A; }
+.hunk-reject:hover { background: #4A2828; }
+
 /* Active ping highlight */
 .ping-highlight {
   background: rgba(255, 196, 0, 0.28);
@@ -480,3 +508,174 @@ body {
   background: #333;
   margin: 0 4px;
 }
+
+/* ─── Topbar: logo (no longer a link) ──────────────────── */
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+}
+
+/* Delete button — subtle until hovered */
+.topbar-icon-btn--delete:hover {
+  color: #c0392b;
+  background: rgba(192, 57, 43, 0.09);
+}
+
+/* ─── Overlays ──────────────────────────────────────────── */
+.overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 18, 14, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: flex-start;
+  overflow-y: auto;
+  z-index: 300;
+  padding: 24px;
+}
+
+.overlay-card {
+  background: #FAFAF8;
+  border-radius: 14px;
+  padding: 40px 44px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 8px 48px rgba(0,0,0,0.18);
+  margin: auto;
+}
+
+.overlay-card--sm {
+  max-width: 380px;
+  padding: 32px 36px;
+}
+
+.overlay-logo {
+  display: block;
+  margin-bottom: 16px;
+  opacity: 0.85;
+}
+
+.overlay-title {
+  font-family: var(--font-ui);
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.overlay-title--sm {
+  font-size: 1.15rem;
+  margin-bottom: 10px;
+}
+
+.overlay-sub {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+}
+
+.overlay-steps {
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text);
+  padding-left: 1.3em;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.overlay-steps li { padding-left: 4px; }
+
+.overlay-steps kbd {
+  font-family: monospace;
+  font-size: 0.8em;
+  background: #E8E4DC;
+  border: 1px solid #CCC5B5;
+  border-radius: 3px;
+  padding: 0 4px;
+  color: var(--text);
+}
+
+.overlay-note {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.overlay-body {
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.overlay-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.overlay-link {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.overlay-link:hover { color: var(--text); }
+
+.overlay-start-btn {
+  background: var(--text);
+  color: #F2F2F0;
+  border: none;
+  border-radius: 7px;
+  padding: 9px 18px;
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.overlay-start-btn:hover { background: #333; }
+
+.overlay-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.btn-overlay-ghost {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 8px 16px;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-overlay-ghost:hover { border-color: #bbb; color: var(--text); }
+
+.btn-overlay-danger {
+  background: #c0392b;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 16px;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-overlay-danger:hover { background: #a93226; }
