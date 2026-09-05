@@ -69,12 +69,36 @@ All connected clients see the change live — accept or reject inline
 └── .env         API keys (gitignored)
 ```
 
+## LLM compatibility
+
+The bridge sends a standard OpenAI chat completions request:
+
+```
+POST {LLM_BASE_URL}/chat/completions
+Authorization: Bearer {LLM_API_KEY}
+```
+
+Any provider that speaks this format works. Set `LLM_BASE_URL` to the base path (without `/chat/completions`):
+
+| Provider | `LLM_BASE_URL` | Notes |
+|----------|---------------|-------|
+| [OpenAI](https://platform.openai.com) | `https://api.openai.com/v1` | GPT-4o, GPT-4o-mini, etc. |
+| [OpenWebUI](https://openwebui.com) | `http://your-host:3000/openai` | Self-hosted frontend for Ollama / any backend |
+| [Ollama](https://ollama.com) | `http://localhost:11434/v1` | Local models (Llama, Mistral, Qwen, …) |
+| [LM Studio](https://lmstudio.ai) | `http://localhost:1234/v1` | Local models with GUI |
+| [Groq](https://console.groq.com) | `https://api.groq.com/openai/v1` | Fast inference, Llama / Mixtral |
+| [HuggingFace](https://huggingface.co/inference-api) | `https://api-inference.huggingface.co/v1` | Serverless inference for supported models |
+| [GWDG](https://www.gwdg.de/ki-services) | see your GWDG dashboard | Academic HPC / AI services (DE) |
+| [vLLM](https://docs.vllm.ai) | `http://your-host:8000/v1` | Self-hosted, production-grade |
+
+For providers that don't require authentication, set `LLM_API_KEY=none` (the bridge always sends a Bearer token — some local servers accept any value).
+
 ## Environment variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `LLM_API_KEY` | — | Bearer token for your LLM API |
-| `LLM_BASE_URL` | — | OpenAI-compatible base URL, e.g. `http://192.168.x.x:3000/openai` |
+| `LLM_BASE_URL` | — | OpenAI-compatible base URL (see table above) |
 | `LLM_MODEL` | `gpt-4o-mini` | Model name passed to the API |
 
 ## License
