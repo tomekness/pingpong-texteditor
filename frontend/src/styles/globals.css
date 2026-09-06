@@ -205,7 +205,7 @@ body {
 
 /* ─── Editor Wrapper ────────────────────────────────── */
 .editor-wrapper {
-  max-width: 720px;
+  max-width: 794px;
   margin: 0 auto;
   padding: calc(var(--topbar-h) + 32px) 24px calc(var(--toolbar-h) + 48px);
 }
