@@ -47,6 +47,7 @@ export default function Editor({ docId }: { docId: string }) {
   const inactivityFiredRef = useRef(false)
   const resetTimerRef = useRef<(() => void) | null>(null)
   const [showDownloadMenu, setShowDownloadMenu] = useState(false)
+  const [previewRange, setPreviewRange] = useState<{ from: number; to: number } | null>(null)
 
   const ydoc = useMemo(() => new Y.Doc(), [])
   const provider = useMemo(() => new HocuspocusProvider({
@@ -117,6 +118,18 @@ export default function Editor({ docId }: { docId: string }) {
   }, [ydoc, connected])
 
   useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      if (showDeleteConfirm) { setShowDeleteConfirm(false); return }
+      if (showNewConfirm) { setShowNewConfirm(false); return }
+      if (showWelcome) { setShowWelcome(false); return }
+      if (showDownloadMenu) { setShowDownloadMenu(false); return }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [showDeleteConfirm, showNewConfirm, showWelcome, showDownloadMenu])
+
+  useEffect(() => {
     const pingMap = ydoc.getMap('pings')
     const update = () => setPings(Object.fromEntries(pingMap.entries()))
     pingMap.observe(update)
@@ -175,8 +188,11 @@ export default function Editor({ docId }: { docId: string }) {
     const ranges = activeChats
       .filter(([, p]) => p.from != null && p.to != null)
       .map(([pingId, p]) => ({ pingId, from: p.from, to: p.to }))
+    if (previewRange) {
+      ranges.push({ pingId: 'ping-preview', from: previewRange.from, to: previewRange.to })
+    }
     updatePingHighlights(editor.view, ranges)
-  }, [editor, pings])
+  }, [editor, pings, previewRange])
 
   const openPings = Object.values(pings).filter((p) => p.status === 'pending').length
 
@@ -349,7 +365,7 @@ export default function Editor({ docId }: { docId: string }) {
           spellCheck={false}
         />
         <div className="editor-area">
-          <PingBubble editor={editor} docId={docId} ydoc={ydoc} />
+          <PingBubble editor={editor} docId={docId} ydoc={ydoc} setPreviewRange={setPreviewRange} />
           <EditorContent editor={editor} />
         </div>
       </div>
@@ -380,13 +396,11 @@ export default function Editor({ docId }: { docId: string }) {
       {showNewConfirm && (
         <div className="overlay-backdrop" onClick={() => setShowNewConfirm(false)}>
           <div className="overlay-card overlay-card--sm" onClick={e => e.stopPropagation()}>
-            <h2 className="overlay-title overlay-title--sm">Open a new document?</h2>
-            <p className="overlay-body">
-              Your current document stays open and is saved. A blank document opens in a new tab.
-            </p>
-            <div className="overlay-actions">
+            <h2 className="overlay-title overlay-title--sm">New document</h2>
+            <div className="overlay-actions overlay-actions--col">
+              <button className="overlay-start-btn" onClick={() => { setShowNewConfirm(false); window.open('/', '_blank') }}>Open in new tab</button>
+              <button className="overlay-start-btn overlay-start-btn--secondary" onClick={() => { setShowNewConfirm(false); window.location.href = '/' }}>Replace current document</button>
               <button className="btn-overlay-ghost" onClick={() => setShowNewConfirm(false)}>Cancel</button>
-              <button className="overlay-start-btn" onClick={() => { setShowNewConfirm(false); window.open('/', '_blank') }}>Open new tab →</button>
             </div>
           </div>
         </div>

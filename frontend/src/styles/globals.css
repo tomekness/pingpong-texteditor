@@ -808,10 +808,22 @@ body {
 }
 .overlay-start-btn:hover { background: #333; }
 
+.overlay-start-btn--secondary {
+  background: none;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.overlay-start-btn--secondary:hover { background: var(--surface); }
+
 .overlay-actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+}
+
+.overlay-actions--col {
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .btn-overlay-ghost {

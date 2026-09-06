@@ -8,9 +8,10 @@ interface PingBubbleProps {
   editor: Editor | null
   docId: string
   ydoc: Y.Doc
+  setPreviewRange: (range: { from: number; to: number } | null) => void
 }
 
-export default function PingBubble({ editor, docId, ydoc }: PingBubbleProps) {
+export default function PingBubble({ editor, docId, ydoc, setPreviewRange }: PingBubbleProps) {
   const [bubble, setBubble] = useState<{ top: number; left: number } | null>(null)
   const [active, setActive] = useState(false)
   const [instruction, setInstruction] = useState('')
@@ -22,7 +23,7 @@ export default function PingBubble({ editor, docId, ydoc }: PingBubbleProps) {
 
     const handleSelectionUpdate = () => {
       const { from, to } = editor.state.selection
-      if (from === to) { setBubble(null); setActive(false); return }
+      if (from === to) { setBubble(null); setActive(false); setPreviewRange(null); return }
 
       const domSelection = window.getSelection()
       if (!domSelection || domSelection.rangeCount === 0) return
@@ -42,6 +43,8 @@ export default function PingBubble({ editor, docId, ydoc }: PingBubbleProps) {
       if (e.key === 'Tab' && bubble) {
         e.preventDefault()
         setActive(true)
+        const { from, to } = editor.state.selection
+        if (from !== to) setPreviewRange({ from, to })
         setTimeout(() => inputRef.current?.focus(), 0)
       }
     }
@@ -52,17 +55,27 @@ export default function PingBubble({ editor, docId, ydoc }: PingBubbleProps) {
       editor.off('selectionUpdate', handleSelectionUpdate)
       editor.view.dom.removeEventListener('keydown', handleKeyDown)
     }
-  }, [editor, bubble])
+  }, [editor, bubble, setPreviewRange])
 
-  const activate = () => setActive(true)
+  const activate = () => {
+    setActive(true)
+    if (editor) {
+      const { from, to } = editor.state.selection
+      if (from !== to) setPreviewRange({ from, to })
+    }
+  }
 
   const activateWithFocus = () => {
     setActive(true)
+    if (editor) {
+      const { from, to } = editor.state.selection
+      if (from !== to) setPreviewRange({ from, to })
+    }
     setTimeout(() => inputRef.current?.focus(), 0)
   }
 
   const deactivate = () => {
-    if (!instruction) setActive(false)
+    if (!instruction) { setActive(false); setPreviewRange(null) }
   }
 
   const sendPing = async () => {
@@ -91,6 +104,7 @@ export default function PingBubble({ editor, docId, ydoc }: PingBubbleProps) {
     setBubble(null)
     setActive(false)
     setSending(false)
+    setPreviewRange(null)
   }
 
   if (!bubble) return null
@@ -115,12 +129,12 @@ export default function PingBubble({ editor, docId, ydoc }: PingBubbleProps) {
             onChange={(e) => setInstruction(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') sendPing()
-              if (e.key === 'Escape') { setActive(false); setInstruction('') }
+              if (e.key === 'Escape') { setActive(false); setInstruction(''); setPreviewRange(null) }
             }}
             disabled={sending}
           />
           {instruction && (
-            <button className="ping-send-btn" onClick={sendPing} disabled={sending}>
+            <button className="ping-send-btn" onClick={sendPing} disabled={sending} title="Send ping (Enter)">
               {sending ? '…' : '→'}
             </button>
           )}

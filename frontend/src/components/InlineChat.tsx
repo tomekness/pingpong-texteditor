@@ -4,6 +4,28 @@ import { useState } from 'react'
 import * as Y from 'yjs'
 import { commitRevision, revertRevision } from '@/lib/trackedChanges'
 
+function wordDiff(a: string, b: string) {
+  const wa = a.split(/(\s+)/)
+  const wb = b.split(/(\s+)/)
+  const m = wa.length, n = wb.length
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = wa[i-1] === wb[j-1] ? dp[i-1][j-1] + 1 : Math.max(dp[i-1][j], dp[i][j-1])
+  const ops: Array<{ type: 'equal' | 'remove' | 'add'; text: string }> = []
+  let i = m, j = n
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && wa[i-1] === wb[j-1]) {
+      ops.unshift({ type: 'equal', text: wa[i-1] }); i--; j--
+    } else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) {
+      ops.unshift({ type: 'add', text: wb[j-1] }); j--
+    } else {
+      ops.unshift({ type: 'remove', text: wa[i-1] }); i--
+    }
+  }
+  return ops
+}
+
 interface InlineChatProps {
   pingId: string
   ping: any
@@ -60,19 +82,21 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
         {ping.status === 'answered' && ping.revision && (
           <div className="chat-diff">
             <div className="diff-row">
-              <span className="diff-label">Before</span>
-              <span className="diff-removed">{ping.selectedText}</span>
-            </div>
-            <div className="diff-row">
-              <span className="diff-label">After</span>
-              <span className="diff-added">{ping.revision}</span>
+              <span className="diff-label">Changes</span>
+              <span>
+                {wordDiff(ping.selectedText, ping.revision).map((op, i) =>
+                  op.type === 'equal'  ? <span key={i}>{op.text}</span> :
+                  op.type === 'remove' ? <span key={i} className="diff-removed">{op.text}</span> :
+                                         <span key={i} className="diff-added">{op.text}</span>
+                )}
+              </span>
             </div>
           </div>
         )}
       </div>
       <div className="inline-chat-actions">
-        <button className="btn-accept" onClick={acceptPing}>✓ Accept all</button>
-        <button className="btn-reject" onClick={rejectPing}>✗ Reject all</button>
+        <button className="btn-accept" onClick={acceptPing} title="Apply the suggested revision to the document">✓ Accept all</button>
+        <button className="btn-reject" onClick={rejectPing} title="Discard the suggested revision">✗ Reject all</button>
       </div>
       <div className="inline-chat-input">
         <input
