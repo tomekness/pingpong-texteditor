@@ -71,8 +71,8 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
         )}
       </div>
       <div className="inline-chat-actions">
-        <button className="btn-accept" onClick={acceptPing}>✓ Accept</button>
-        <button className="btn-reject" onClick={rejectPing}>✗ Reject</button>
+        <button className="btn-accept" onClick={acceptPing}>✓ Accept all</button>
+        <button className="btn-reject" onClick={rejectPing}>✗ Reject all</button>
       </div>
       <div className="inline-chat-input">
         <input

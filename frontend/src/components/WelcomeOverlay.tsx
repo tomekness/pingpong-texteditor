@@ -2,9 +2,10 @@
 
 interface WelcomeOverlayProps {
   onStart: () => void
+  onNew?: () => void
 }
 
-export default function WelcomeOverlay({ onStart }: WelcomeOverlayProps) {
+export default function WelcomeOverlay({ onStart, onNew }: WelcomeOverlayProps) {
   return (
     <div className="overlay-backdrop" onClick={onStart}>
       <div className="overlay-card" onClick={e => e.stopPropagation()}>
@@ -18,28 +19,28 @@ export default function WelcomeOverlay({ onStart }: WelcomeOverlayProps) {
         </div>
 
         <div className="overlay-demo">
-          <div className="demo-row demo-row--ping">
-            <span className="demo-side">You</span>
-            <div className="demo-bubble demo-bubble--user">
+          <div className="demo-step">
+            <div className="demo-step-label">Select text and ping</div>
+            <div className="demo-doc">
               <span>The meeting lasted </span>
               <mark className="demo-mark">forever and nobody left happy</mark>
               <span>.</span>
-              <span className="demo-instruction">→ &ldquo;Make it punchy&rdquo;</span>
+              <div className="demo-ping-tip">→ &ldquo;Make it punchy&rdquo;</div>
             </div>
           </div>
           <div className="demo-net">🏓</div>
-          <div className="demo-row demo-row--pong">
-            <span className="demo-side">Opponent</span>
-            <div className="demo-bubble demo-bubble--opponent">
+          <div className="demo-step">
+            <div className="demo-step-label">Opponent revises inline</div>
+            <div className="demo-doc">
               <span>The meeting lasted </span>
               <span className="tracked-del">forever and nobody left happy</span>
               <span> </span>
               <span className="tracked-add">way too long</span>
               <span>.</span>
-              <div className="demo-btns">
-                <button className="demo-accept" tabIndex={-1}>✓ Accept</button>
-                <button className="demo-reject" tabIndex={-1}>✗ Reject</button>
-              </div>
+              <span className="hunk-actions" style={{ userSelect: 'none' }}>
+                <button className="hunk-btn hunk-accept" tabIndex={-1}>✓</button>
+                <button className="hunk-btn hunk-reject" tabIndex={-1}>✗</button>
+              </span>
             </div>
           </div>
         </div>
@@ -53,9 +54,16 @@ export default function WelcomeOverlay({ onStart }: WelcomeOverlayProps) {
             <a className="overlay-link" href="https://github.com/tomekness/pingpong" target="_blank" rel="noreferrer">GitHub ↗</a>
             <a className="overlay-link" href="https://experiments.tomekness.de" target="_blank" rel="noreferrer">experiments.tomekness.de ↗</a>
           </div>
-          <button className="overlay-start-btn" onClick={onStart}>
-            Start writing →
-          </button>
+          <div className="overlay-footer-btns">
+            {onNew && (
+              <button className="btn-overlay-ghost" onClick={onNew}>
+                + New document
+              </button>
+            )}
+            <button className="overlay-start-btn" onClick={onStart}>
+              {onNew ? 'Continue →' : 'Start writing →'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

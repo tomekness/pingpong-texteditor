@@ -44,6 +44,8 @@ export default function Editor({ docId }: { docId: string }) {
   const snapshotRef = useRef<ArrayBuffer | null>(null)
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const inactivityFiredRef = useRef(false)
+  const resetTimerRef = useRef<(() => void) | null>(null)
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false)
 
   const ydoc = useMemo(() => new Y.Doc(), [])
   const provider = useMemo(() => new HocuspocusProvider({
@@ -73,6 +75,8 @@ export default function Editor({ docId }: { docId: string }) {
       clearTimeout(inactivityTimerRef.current)
       inactivityTimerRef.current = setTimeout(fire, INACTIVITY_MS)
     }
+
+    resetTimerRef.current = reset
 
     const events = ['keydown', 'mousemove', 'click', 'wheel', 'touchstart'] as const
     events.forEach(e => window.addEventListener(e, reset, { passive: true }))
@@ -181,6 +185,39 @@ export default function Editor({ docId }: { docId: string }) {
     ydoc.getMap('meta').set('title', v)
   }, [ydoc])
 
+  const handleRefreshTimer = useCallback(async () => {
+    inactivityFiredRef.current = false
+    setShowInactivity(false)
+    const arr = Y.encodeStateAsUpdate(ydoc)
+    const buf = arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength) as ArrayBuffer
+    try {
+      await fetch(`/api/docs/${encodeURIComponent(docId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/octet-stream' },
+        body: buf,
+      })
+    } catch {}
+    resetTimerRef.current?.()
+  }, [docId, ydoc])
+
+  const handleDownload = useCallback((format: 'txt' | 'md' | 'doc') => {
+    if (!editor) return
+    setShowDownloadMenu(false)
+    const name = (title || 'document').replace(/[^a-z0-9äöüÄÖÜß]/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'document'
+
+    if (format === 'txt') {
+      const text = editor.getText({ blockSeparator: '\n\n' })
+      triggerDownload(new Blob([text], { type: 'text/plain' }), `${name}.txt`)
+    } else if (format === 'md') {
+      const md = jsonToMd(editor.getJSON())
+      triggerDownload(new Blob([md], { type: 'text/markdown' }), `${name}.md`)
+    } else if (format === 'doc') {
+      const html = editor.getHTML()
+      const docHtml = `<!DOCTYPE html>\n<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>\n<head><meta charset='utf-8'><style>body{font-family:Calibri,sans-serif;font-size:11pt;line-height:1.6;}del{text-decoration:line-through;}</style></head>\n<body>${title ? `<h1>${title}</h1>` : ''}${html}</body></html>`
+      triggerDownload(new Blob(['﻿', docHtml], { type: 'application/msword' }), `${name}.doc`)
+    }
+  }, [editor, title])
+
   const copyLink = useCallback(() => {
     navigator.clipboard.writeText(window.location.href).then(() => {
       setCopied(true)
@@ -220,9 +257,12 @@ export default function Editor({ docId }: { docId: string }) {
   return (
     <>
       <div className="topbar">
-        <div className="topbar-logo">
+        <button className="topbar-logo-btn" onClick={() => setShowWelcome(true)} title="About Pingpong">
           <img src="/logo.svg" alt="Pingpong" width={28} height={28} fetchPriority="low" />
-        </div>
+        </button>
+        <button className="topbar-new-btn" onClick={() => window.open('/', '_blank')} title="New document">
+          + New
+        </button>
         <div className="topbar-meta">
           <span className={`agent-status ${connected ? 'live' : 'idle'}`}>
             {connected ? '● Opponent live' : '○ Opponent offline'}
@@ -233,6 +273,38 @@ export default function Editor({ docId }: { docId: string }) {
         </div>
         <div className="topbar-actions">
           <span className={`save-indicator save-indicator--${saveStatus}`}>{saveLabel}</span>
+          <button
+            className="topbar-icon-btn"
+            onClick={handleRefreshTimer}
+            title="Reset inactivity timer"
+            aria-label="Reset inactivity timer"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+          </button>
+          <div className="topbar-download-wrap">
+            <button
+              className="topbar-icon-btn"
+              onClick={() => setShowDownloadMenu(v => !v)}
+              title="Download document"
+              aria-label="Download document"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </button>
+            {showDownloadMenu && (
+              <div className="download-menu">
+                <button onClick={() => handleDownload('txt')}>TXT</button>
+                <button onClick={() => handleDownload('md')}>Markdown</button>
+                <button onClick={() => handleDownload('doc')}>Word (.doc)</button>
+              </div>
+            )}
+          </div>
           <button
             className="topbar-icon-btn"
             onClick={copyLink}
@@ -292,7 +364,12 @@ export default function Editor({ docId }: { docId: string }) {
         )
       })}
 
-      {showWelcome && <WelcomeOverlay onStart={dismissWelcome} />}
+      {showWelcome && (
+        <WelcomeOverlay
+          onStart={dismissWelcome}
+          onNew={sessionStorage.getItem(`welcomed-${docId}`) ? () => { window.open('/', '_blank') } : undefined}
+        />
+      )}
       {showDeleteConfirm && (
         <DeleteConfirmOverlay
           onCancel={() => setShowDeleteConfirm(false)}
@@ -305,6 +382,69 @@ export default function Editor({ docId }: { docId: string }) {
           onFresh={() => { window.location.href = '/' }}
         />
       )}
+      {showDownloadMenu && (
+        <div className="download-menu-backdrop" onClick={() => setShowDownloadMenu(false)} />
+      )}
     </>
   )
+}
+
+// ── Export helpers ────────────────────────────────────────────────────────────
+
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function jsonToMd(node: any, listPrefix = ''): string {
+  if (!node) return ''
+  switch (node.type) {
+    case 'doc':
+      return (node.content || []).map((n: any) => jsonToMd(n)).filter(Boolean).join('\n\n').trim()
+    case 'paragraph':
+      if (!node.content?.length) return ''
+      return (node.content || []).map((n: any) => jsonToMd(n)).join('')
+    case 'heading': {
+      const level = node.attrs?.level || 1
+      const text = (node.content || []).map((n: any) => jsonToMd(n)).join('')
+      return '#'.repeat(level) + ' ' + text
+    }
+    case 'bulletList':
+      return (node.content || []).map((n: any) => '- ' + listItemText(n)).join('\n')
+    case 'orderedList':
+      return (node.content || []).map((n: any, i: number) => `${i + 1}. ` + listItemText(n)).join('\n')
+    case 'listItem':
+      return (node.content || []).map((n: any) => jsonToMd(n)).join('\n')
+    case 'codeBlock': {
+      const lang = node.attrs?.language || ''
+      const text = (node.content || []).map((n: any) => n.text || '').join('')
+      return '```' + lang + '\n' + text + '\n```'
+    }
+    case 'blockquote':
+      return (node.content || []).map((n: any) => '> ' + jsonToMd(n)).join('\n')
+    case 'hardBreak':
+      return '  \n'
+    case 'text': {
+      const marks: any[] = node.marks || []
+      if (marks.some((m: any) => m.type === 'trackedDelete')) return ''
+      let t: string = node.text || ''
+      for (const m of marks) {
+        if (m.type === 'bold') t = `**${t}**`
+        else if (m.type === 'italic') t = `*${t}*`
+        else if (m.type === 'code') t = `\`${t}\``
+        else if (m.type === 'strike') t = `~~${t}~~`
+      }
+      return t
+    }
+    default:
+      return (node.content || []).map((n: any) => jsonToMd(n)).join('')
+  }
+}
+
+function listItemText(node: any): string {
+  return (node.content || []).map((n: any) => jsonToMd(n)).join('').trim()
 }
