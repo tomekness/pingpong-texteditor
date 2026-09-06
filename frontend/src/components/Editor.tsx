@@ -367,7 +367,7 @@ export default function Editor({ docId }: { docId: string }) {
       {showWelcome && (
         <WelcomeOverlay
           onStart={dismissWelcome}
-          onNew={sessionStorage.getItem(`welcomed-${docId}`) ? () => { window.open('/', '_blank') } : undefined}
+          onNew={() => window.open('/', '_blank')}
         />
       )}
       {showDeleteConfirm && (
