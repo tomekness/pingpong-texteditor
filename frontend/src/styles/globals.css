@@ -366,7 +366,7 @@ body {
 /* ─── Inline Chat (in-flow block) ───────────────────── */
 .inline-chat {
   display: block;
-  width: 100%;
+  margin-left: 28px;
   background: var(--bg-dark);
   border-radius: 8px;
   padding: 16px;
