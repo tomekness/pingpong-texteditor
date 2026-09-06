@@ -37,6 +37,7 @@ export default function Editor({ docId }: { docId: string }) {
     return !sessionStorage.getItem(`welcomed-${docId}`)
   })
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showNewConfirm, setShowNewConfirm] = useState(false)
   const [showInactivity, setShowInactivity] = useState(false)
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -260,7 +261,7 @@ export default function Editor({ docId }: { docId: string }) {
         <button className="topbar-logo-btn" onClick={() => setShowWelcome(true)} title="About Pingpong">
           <img src="/logo.svg" alt="Pingpong" width={28} height={28} fetchPriority="low" />
         </button>
-        <button className="topbar-new-btn" onClick={() => window.open('/', '_blank')} title="New document">
+        <button className="topbar-new-btn" onClick={() => setShowNewConfirm(true)} title="New document">
           + New
         </button>
         <div className="topbar-meta">
@@ -367,7 +368,7 @@ export default function Editor({ docId }: { docId: string }) {
       {showWelcome && (
         <WelcomeOverlay
           onStart={dismissWelcome}
-          onNew={() => window.open('/', '_blank')}
+          onNew={() => { setShowWelcome(false); setShowNewConfirm(true) }}
         />
       )}
       {showDeleteConfirm && (
@@ -375,6 +376,20 @@ export default function Editor({ docId }: { docId: string }) {
           onCancel={() => setShowDeleteConfirm(false)}
           onConfirm={handleDeleteConfirm}
         />
+      )}
+      {showNewConfirm && (
+        <div className="overlay-backdrop" onClick={() => setShowNewConfirm(false)}>
+          <div className="overlay-card overlay-card--sm" onClick={e => e.stopPropagation()}>
+            <h2 className="overlay-title overlay-title--sm">Open a new document?</h2>
+            <p className="overlay-body">
+              Your current document stays open and is saved. A blank document opens in a new tab.
+            </p>
+            <div className="overlay-actions">
+              <button className="btn-overlay-ghost" onClick={() => setShowNewConfirm(false)}>Cancel</button>
+              <button className="overlay-start-btn" onClick={() => { setShowNewConfirm(false); window.open('/', '_blank') }}>Open new tab →</button>
+            </div>
+          </div>
+        </div>
       )}
       {showInactivity && (
         <InactivityOverlay
