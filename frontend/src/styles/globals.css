@@ -662,39 +662,11 @@ body {
 
 /* ─── Ping-Pong Demo ────────────────────────────────── */
 .overlay-demo {
-  background: #F5F3EF;
   border-radius: 10px;
-  padding: 16px 20px;
   margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.demo-step {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.demo-step-label {
-  font-family: var(--font-ui);
-  font-size: 0.68rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-}
-
-.demo-doc {
-  font-family: var(--font);
-  font-size: 0.92rem;
-  line-height: 1.7;
-  color: var(--text);
-  background: #fff;
+  overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 10px 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 }
 
 .demo-mark {
@@ -703,19 +675,84 @@ body {
   padding: 0 1px;
 }
 
-.demo-ping-tip {
-  margin-top: 6px;
+/* ─── Demo Editor Frame ─────────────────────────────── */
+.demo-frame-bar {
+  background: #fff;
+  border-bottom: 1px solid #E8E8E6;
+  padding: 7px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-family: var(--font-ui);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+}
+
+.demo-frame-live { color: #5A9E5A; flex: 1; }
+.demo-frame-saved { color: #5A9E5A; }
+
+.demo-frame-body {
+  padding: 18px 22px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.demo-frame-title {
+  font-family: var(--font-ui);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.demo-frame-text {
+  font-family: var(--font);
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.demo-ping-inline {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
   color: var(--text-muted);
   font-style: italic;
 }
 
-.demo-net {
-  text-align: center;
-  font-size: 1rem;
-  padding: 4px 0;
-  opacity: 0.6;
+.demo-frame-chat {
+  background: var(--bg-dark);
+  border-radius: 7px;
+  padding: 12px 14px;
+  margin-left: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+}
+
+.demo-fc-row {
+  display: flex;
+  gap: 10px;
+  line-height: 1.5;
+}
+
+.demo-fc-label {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #7A7060;
+  min-width: 40px;
+  font-size: 0.7rem;
+  padding-top: 2px;
+}
+
+.demo-fc-text { color: #CCC5B5; }
+
+.demo-fc-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
 }
 
 .overlay-note {

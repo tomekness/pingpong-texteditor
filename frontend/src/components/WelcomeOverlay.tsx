@@ -19,28 +19,39 @@ export default function WelcomeOverlay({ onStart, onNew }: WelcomeOverlayProps) 
         </div>
 
         <div className="overlay-demo">
-          <div className="demo-step">
-            <div className="demo-step-label">Select text and ping</div>
-            <div className="demo-doc">
-              <span>The meeting lasted </span>
-              <mark className="demo-mark">forever and nobody left happy</mark>
-              <span>.</span>
-              <div className="demo-ping-tip">→ &ldquo;Make it punchy&rdquo;</div>
+          <div className="demo-frame">
+            <div className="demo-frame-bar">
+              <span className="demo-frame-live">● Opponent live</span>
+              <span className="demo-frame-saved">Saved</span>
             </div>
-          </div>
-          <div className="demo-net">🏓</div>
-          <div className="demo-step">
-            <div className="demo-step-label">Opponent revises inline</div>
-            <div className="demo-doc">
-              <span>The meeting lasted </span>
-              <span className="tracked-del">forever and nobody left happy</span>
-              <span> </span>
-              <span className="tracked-add">way too long</span>
-              <span>.</span>
-              <span className="hunk-actions" style={{ userSelect: 'none' }}>
-                <button className="hunk-btn hunk-accept" tabIndex={-1}>✓</button>
-                <button className="hunk-btn hunk-reject" tabIndex={-1}>✗</button>
-              </span>
+            <div className="demo-frame-body">
+              <div className="demo-frame-title">Meeting Notes</div>
+              <div className="demo-frame-text">
+                <span>The meeting lasted </span>
+                <mark className="demo-mark">forever and nobody left happy</mark>
+                <span>. </span>
+                <span className="demo-ping-inline">→ Ping: &ldquo;Make it punchy&rdquo;</span>
+              </div>
+              <div className="demo-frame-chat">
+                <div className="demo-fc-row">
+                  <span className="demo-fc-label">Ping</span>
+                  <span className="demo-fc-text">Make it punchy</span>
+                </div>
+                <div className="demo-fc-row">
+                  <span className="demo-fc-label">After</span>
+                  <span className="demo-fc-text">
+                    The meeting lasted{' '}
+                    <span className="tracked-del">forever and nobody left happy</span>
+                    {' '}
+                    <span className="tracked-add">way too long</span>
+                    {'.'}
+                  </span>
+                </div>
+                <div className="demo-fc-btns">
+                  <button className="btn-accept" tabIndex={-1}>✓ Accept all</button>
+                  <button className="btn-reject" tabIndex={-1}>✗ Reject all</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

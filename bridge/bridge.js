@@ -1,8 +1,8 @@
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import * as Y from 'yjs'
 
-const API_KEY        = process.env.LLM_API_KEY
-const BASE_URL       = process.env.LLM_BASE_URL
+const API_KEY        = process.env.LLM_API_KEY || process.env.OPENWEBUI_API_KEY
+const BASE_URL       = process.env.LLM_BASE_URL || process.env.OPENWEBUI_BASE_URL
 const MODEL          = process.env.LLM_MODEL || 'gpt-4o-mini'
 const HOCUSPOCUS_URL = process.env.HOCUSPOCUS_URL || 'ws://hocuspocus:1234'
 const PORT           = parseInt(process.env.BRIDGE_PORT || '3002')
