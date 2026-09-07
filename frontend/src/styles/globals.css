@@ -366,14 +366,12 @@ body {
 /* ─── Inline Chat (in-flow block) ───────────────────── */
 .inline-chat {
   display: block;
-  margin-left: 40px;
-  margin-right: -24px;
   background: var(--bg-dark);
   border-radius: 8px;
   padding: 16px;
   font-family: var(--font-ui);
   font-size: 0.85rem;
-  margin: 12px 0;
+  margin: 12px -24px 12px 40px;
 }
 
 .inline-chat-messages { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
@@ -398,41 +396,6 @@ body {
 .chat-msg.user .chat-label { color: #CCC5B5; }
 .chat-msg.assistant .chat-label { color: var(--cursor-ai); }
 
-/* Diff view (before/after) */
-.chat-diff {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 6px 0;
-  border-radius: 5px;
-}
-
-.diff-row {
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-  line-height: 1.55;
-}
-
-.diff-label {
-  flex-shrink: 0;
-  font-weight: 600;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  width: 48px;
-  color: #555;
-}
-
-.diff-removed {
-  color: #C47B7B;
-  text-decoration: line-through;
-  opacity: 0.85;
-}
-
-.diff-added {
-  color: #6BAE6B;
-}
 
 .inline-chat-actions {
   display: flex;
@@ -1051,4 +1014,37 @@ body {
   padding: 80px 24px;
   font-family: var(--font-ui);
   color: var(--text-muted);
+}
+
+/* ─── Copy Link Overlay ─────────────────────────────── */
+.copy-link-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.copy-link-input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: var(--text);
+  background: #fff;
+  outline: none;
+  cursor: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.copy-link-input:focus {
+  border-color: #aaa;
+}
+
+.copy-link-btn {
+  flex-shrink: 0;
+  padding: 9px 18px;
+  font-size: 0.85rem;
 }

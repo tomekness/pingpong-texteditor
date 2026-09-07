@@ -32,10 +32,7 @@ export default function Editor({ docId }: { docId: string }) {
   const [title, setTitle] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'offline'>('offline')
   const [copied, setCopied] = useState(false)
-  const [showWelcome, setShowWelcome] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return !sessionStorage.getItem(`welcomed-${docId}`)
-  })
+  const [showWelcome, setShowWelcome] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showNewConfirm, setShowNewConfirm] = useState(false)
   const [showInactivity, setShowInactivity] = useState(false)
@@ -47,6 +44,7 @@ export default function Editor({ docId }: { docId: string }) {
   const inactivityFiredRef = useRef(false)
   const resetTimerRef = useRef<(() => void) | null>(null)
   const [showDownloadMenu, setShowDownloadMenu] = useState(false)
+  const [showCopyLink, setShowCopyLink] = useState(false)
   const [previewRange, setPreviewRange] = useState<{ from: number; to: number } | null>(null)
 
   const ydoc = useMemo(() => new Y.Doc(), [])
@@ -58,6 +56,10 @@ export default function Editor({ docId }: { docId: string }) {
     onConnect: () => { setConnected(true); setSaveStatus('saved') },
     onDisconnect: () => { setConnected(false); setSaveStatus('offline') },
   }), [docId, ydoc])
+
+  useEffect(() => {
+    if (!sessionStorage.getItem(`welcomed-${docId}`)) setShowWelcome(true)
+  }, [docId])
 
   // Inactivity timer — deletes doc from server after 1 hour of no user interaction
   useEffect(() => {
@@ -124,10 +126,11 @@ export default function Editor({ docId }: { docId: string }) {
       if (showNewConfirm) { setShowNewConfirm(false); return }
       if (showWelcome) { setShowWelcome(false); return }
       if (showDownloadMenu) { setShowDownloadMenu(false); return }
+      if (showCopyLink) { setShowCopyLink(false); return }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [showDeleteConfirm, showNewConfirm, showWelcome, showDownloadMenu])
+  }, [showDeleteConfirm, showNewConfirm, showWelcome, showDownloadMenu, showCopyLink])
 
   useEffect(() => {
     const pingMap = ydoc.getMap('pings')
@@ -140,6 +143,7 @@ export default function Editor({ docId }: { docId: string }) {
   }, [ydoc, provider])
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({ history: false }),
       Collaboration.configure({ document: ydoc }),
@@ -231,15 +235,35 @@ export default function Editor({ docId }: { docId: string }) {
     } else if (format === 'doc') {
       const html = editor.getHTML()
       const docHtml = `<!DOCTYPE html>\n<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>\n<head><meta charset='utf-8'><style>body{font-family:Calibri,sans-serif;font-size:11pt;line-height:1.6;}del{text-decoration:line-through;}</style></head>\n<body>${title ? `<h1>${title}</h1>` : ''}${html}</body></html>`
-      triggerDownload(new Blob(['﻿', docHtml], { type: 'application/msword' }), `${name}.doc`)
+      triggerDownload(new Blob(['﻿', docHtml], { type: 'application/octet-stream' }), `${name}.doc`)
     }
   }, [editor, title])
 
   const copyLink = useCallback(() => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
+    setShowCopyLink(true)
+  }, [])
+
+  const handleCopyLinkBtn = useCallback(() => {
+    const url = window.location.href
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      }).catch(() => {
+        setCopied(false)
+      })
+    } else {
+      const ta = document.createElement('textarea')
+      ta.value = url
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
       setCopied(true)
-      setTimeout(() => setCopied(false), 1800)
-    })
+      setTimeout(() => setCopied(false), 2000)
+    }
   }, [])
 
   const dismissWelcome = useCallback(() => {
@@ -325,19 +349,13 @@ export default function Editor({ docId }: { docId: string }) {
           <button
             className="topbar-icon-btn"
             onClick={copyLink}
-            title={copied ? 'Copied!' : 'Copy link'}
+            title="Copy link"
             aria-label="Copy link"
           >
-            {copied ? (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            ) : (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-              </svg>
-            )}
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
           </button>
           <button
             className="topbar-icon-btn topbar-icon-btn--delete"
@@ -414,6 +432,34 @@ export default function Editor({ docId }: { docId: string }) {
       {showDownloadMenu && (
         <div className="download-menu-backdrop" onClick={() => setShowDownloadMenu(false)} />
       )}
+      {showCopyLink && (
+        <div className="overlay-backdrop" onClick={() => setShowCopyLink(false)}>
+          <div className="overlay-card overlay-card--sm" onClick={e => e.stopPropagation()}>
+            <h2 className="overlay-title overlay-title--sm">Share this document</h2>
+            <p className="overlay-sub2" style={{ marginBottom: 16 }}>
+              Anyone with this link can open and edit the document. No login required.
+            </p>
+            <div className="copy-link-row">
+              <input
+                className="copy-link-input"
+                type="text"
+                readOnly
+                value={typeof window !== 'undefined' ? window.location.href : ''}
+                onFocus={e => e.target.select()}
+              />
+              <button
+                className="overlay-start-btn copy-link-btn"
+                onClick={handleCopyLinkBtn}
+              >
+                {copied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <button className="btn-overlay-ghost" style={{ marginTop: 16, width: '100%' }} onClick={() => setShowCopyLink(false)}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -425,8 +471,10 @@ function triggerDownload(blob: Blob, filename: string) {
   const a = document.createElement('a')
   a.href = url
   a.download = filename
+  document.body.appendChild(a)
   a.click()
-  URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 function jsonToMd(node: any, listPrefix = ''): string {
