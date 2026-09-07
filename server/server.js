@@ -186,6 +186,8 @@ createServer(async (req, res) => {
     try {
       await dbRun(db, 'DELETE FROM documents WHERE name = ?', [name])
       await dbRun(db, 'DELETE FROM document_meta WHERE name = ?', [name])
+      // Kick all connected clients so Hocuspocus drops the in-memory document
+      server.closeConnections(name)
       res.writeHead(200)
       res.end(JSON.stringify({ ok: true }))
     } catch (err) {

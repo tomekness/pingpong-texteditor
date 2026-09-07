@@ -71,10 +71,10 @@ export default function Editor({ docId }: { docId: string }) {
       inactivityFiredRef.current = true
       const arr = Y.encodeStateAsUpdate(ydoc)
       snapshotRef.current = arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength) as ArrayBuffer
+      provider.disconnect()
       try {
         await fetch(`/api/docs/${encodeURIComponent(docId)}`, { method: 'DELETE' })
       } catch {}
-      provider.disconnect()
       setShowInactivity(true)
     }
 
