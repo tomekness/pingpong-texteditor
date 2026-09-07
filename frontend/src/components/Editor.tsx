@@ -37,13 +37,16 @@ export default function Editor({ docId }: { docId: string }) {
   const [showNewConfirm, setShowNewConfirm] = useState(false)
   const [showInactivity, setShowInactivity] = useState(false)
 
+  const [timerMsg, setTimerMsg] = useState(false)
+
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const timerMsgRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const mountsRef = useRef<Map<string, HTMLDivElement>>(new Map())
   const snapshotRef = useRef<ArrayBuffer | null>(null)
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const inactivityFiredRef = useRef(false)
   const resetTimerRef = useRef<(() => void) | null>(null)
-  const [showDownloadMenu, setShowDownloadMenu] = useState(false)
+  const [showSave, setShowSave] = useState(false)
   const [showCopyLink, setShowCopyLink] = useState(false)
   const [previewRange, setPreviewRange] = useState<{ from: number; to: number } | null>(null)
 
@@ -71,6 +74,7 @@ export default function Editor({ docId }: { docId: string }) {
       try {
         await fetch(`/api/docs/${encodeURIComponent(docId)}`, { method: 'DELETE' })
       } catch {}
+      provider.disconnect()
       setShowInactivity(true)
     }
 
@@ -90,7 +94,7 @@ export default function Editor({ docId }: { docId: string }) {
       events.forEach(e => window.removeEventListener(e, reset))
       clearTimeout(inactivityTimerRef.current)
     }
-  }, [docId, ydoc])
+  }, [docId, ydoc, provider])
 
   // Sync title from/to Yjs meta map
   useEffect(() => {
@@ -125,12 +129,12 @@ export default function Editor({ docId }: { docId: string }) {
       if (showDeleteConfirm) { setShowDeleteConfirm(false); return }
       if (showNewConfirm) { setShowNewConfirm(false); return }
       if (showWelcome) { setShowWelcome(false); return }
-      if (showDownloadMenu) { setShowDownloadMenu(false); return }
+      if (showSave) { setShowSave(false); return }
       if (showCopyLink) { setShowCopyLink(false); return }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [showDeleteConfirm, showNewConfirm, showWelcome, showDownloadMenu, showCopyLink])
+  }, [showDeleteConfirm, showNewConfirm, showWelcome, showSave, showCopyLink])
 
   useEffect(() => {
     const pingMap = ydoc.getMap('pings')
@@ -206,9 +210,21 @@ export default function Editor({ docId }: { docId: string }) {
     ydoc.getMap('meta').set('title', v)
   }, [ydoc])
 
+  const showTimerReset = useCallback(() => {
+    setTimerMsg(true)
+    clearTimeout(timerMsgRef.current)
+    timerMsgRef.current = setTimeout(() => setTimerMsg(false), 2000)
+  }, [])
+
+  const handleTopbarRefresh = useCallback(() => {
+    resetTimerRef.current?.()
+    showTimerReset()
+  }, [showTimerReset])
+
   const handleRefreshTimer = useCallback(async () => {
     inactivityFiredRef.current = false
     setShowInactivity(false)
+    showTimerReset()
     const arr = Y.encodeStateAsUpdate(ydoc)
     const buf = arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength) as ArrayBuffer
     try {
@@ -219,11 +235,11 @@ export default function Editor({ docId }: { docId: string }) {
       })
     } catch {}
     resetTimerRef.current?.()
-  }, [docId, ydoc])
+  }, [docId, ydoc, showTimerReset])
 
   const handleDownload = useCallback((format: 'txt' | 'md' | 'doc') => {
     if (!editor) return
-    setShowDownloadMenu(false)
+    setShowSave(false)
     const name = (title || 'document').replace(/[^a-z0-9äöüÄÖÜß]/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'document'
 
     if (format === 'txt') {
@@ -291,9 +307,11 @@ export default function Editor({ docId }: { docId: string }) {
     window.location.reload()
   }, [docId])
 
-  const saveLabel =
+  const saveLabel = timerMsg ? 'Timer reset ✓' :
     saveStatus === 'saving' ? 'Saving…' :
     saveStatus === 'saved'  ? 'Saved'   : 'Offline'
+
+  const saveStatusClass = timerMsg ? 'saved' : saveStatus
 
   return (
     <>
@@ -313,10 +331,10 @@ export default function Editor({ docId }: { docId: string }) {
           )}
         </div>
         <div className="topbar-actions">
-          <span className={`save-indicator save-indicator--${saveStatus}`}>{saveLabel}</span>
+          <span className={`save-indicator save-indicator--${saveStatusClass}`}>{saveLabel}</span>
           <button
             className="topbar-icon-btn"
-            onClick={handleRefreshTimer}
+            onClick={handleTopbarRefresh}
             title="Reset inactivity timer"
             aria-label="Reset inactivity timer"
           >
@@ -325,27 +343,18 @@ export default function Editor({ docId }: { docId: string }) {
               <path d="M3 3v5h5" />
             </svg>
           </button>
-          <div className="topbar-download-wrap">
-            <button
-              className="topbar-icon-btn"
-              onClick={() => setShowDownloadMenu(v => !v)}
-              title="Download document"
-              aria-label="Download document"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-            </button>
-            {showDownloadMenu && (
-              <div className="download-menu">
-                <button onClick={() => handleDownload('txt')}>TXT</button>
-                <button onClick={() => handleDownload('md')}>Markdown</button>
-                <button onClick={() => handleDownload('doc')}>Word (.doc)</button>
-              </div>
-            )}
-          </div>
+          <button
+            className="topbar-icon-btn"
+            onClick={() => setShowSave(true)}
+            title="Save document"
+            aria-label="Save document"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </button>
           <button
             className="topbar-icon-btn"
             onClick={copyLink}
@@ -415,8 +424,9 @@ export default function Editor({ docId }: { docId: string }) {
         <div className="overlay-backdrop" onClick={() => setShowNewConfirm(false)}>
           <div className="overlay-card overlay-card--sm" onClick={e => e.stopPropagation()}>
             <h2 className="overlay-title overlay-title--sm">New document</h2>
+            <p className="overlay-body">Your current document remains open until it expires after 1 hour of inactivity.</p>
             <div className="overlay-actions overlay-actions--col">
-              <button className="overlay-start-btn" onClick={() => { setShowNewConfirm(false); window.open('/', '_blank') }}>Open in new tab</button>
+              <button className="overlay-start-btn" onClick={() => { setShowNewConfirm(false); window.open('/', '_blank') }}>Open in new tab →</button>
               <button className="overlay-start-btn overlay-start-btn--secondary" onClick={() => { setShowNewConfirm(false); window.location.href = '/' }}>Replace current document</button>
               <button className="btn-overlay-ghost" onClick={() => setShowNewConfirm(false)}>Cancel</button>
             </div>
@@ -429,8 +439,19 @@ export default function Editor({ docId }: { docId: string }) {
           onFresh={() => { window.location.href = '/' }}
         />
       )}
-      {showDownloadMenu && (
-        <div className="download-menu-backdrop" onClick={() => setShowDownloadMenu(false)} />
+      {showSave && (
+        <div className="overlay-backdrop" onClick={() => setShowSave(false)}>
+          <div className="overlay-card overlay-card--sm" onClick={e => e.stopPropagation()}>
+            <h2 className="overlay-title overlay-title--sm">Save document</h2>
+            <p className="overlay-body">Choose a format to download your document.</p>
+            <div className="overlay-actions overlay-actions--col">
+              <button className="overlay-start-btn" onClick={() => handleDownload('md')}>Markdown (.md)</button>
+              <button className="overlay-start-btn overlay-start-btn--secondary" onClick={() => handleDownload('txt')}>Plain text (.txt)</button>
+              <button className="overlay-start-btn overlay-start-btn--secondary" onClick={() => handleDownload('doc')}>Word document (.doc)</button>
+              <button className="btn-overlay-ghost" onClick={() => setShowSave(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
       )}
       {showCopyLink && (
         <div className="overlay-backdrop" onClick={() => setShowCopyLink(false)}>

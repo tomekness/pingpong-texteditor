@@ -721,11 +721,20 @@ body {
 
 .overlay-note {
   font-family: var(--font-ui);
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
   margin-bottom: 28px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.overlay-note-warn {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .overlay-body {
@@ -771,6 +780,8 @@ body {
   transition: background 0.15s;
 }
 .overlay-start-btn:hover { background: #333; }
+.overlay-start-btn:active { background: #111; }
+.overlay-start-btn:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 
 .overlay-start-btn--secondary {
   background: none;
@@ -778,6 +789,7 @@ body {
   border: 1px solid var(--border);
 }
 .overlay-start-btn--secondary:hover { background: var(--surface); }
+.overlay-start-btn--secondary:active { background: rgba(0,0,0,0.09); }
 
 .overlay-actions {
   display: flex;
@@ -802,6 +814,8 @@ body {
   transition: border-color 0.15s, color 0.15s;
 }
 .btn-overlay-ghost:hover { border-color: #bbb; color: var(--text); }
+.btn-overlay-ghost:active { border-color: #999; background: rgba(0,0,0,0.04); }
+.btn-overlay-ghost:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 
 .btn-overlay-danger {
   background: #c0392b;
@@ -816,6 +830,8 @@ body {
   transition: background 0.15s;
 }
 .btn-overlay-danger:hover { background: #a93226; }
+.btn-overlay-danger:active { background: #7e261c; }
+.btn-overlay-danger:focus-visible { outline: 2px solid #c0392b; outline-offset: 2px; }
 
 /* ─── Admin ─────────────────────────────────────────── */
 .admin-login {

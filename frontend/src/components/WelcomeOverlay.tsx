@@ -28,7 +28,9 @@ export default function WelcomeOverlay({ onStart, onNew }: WelcomeOverlayProps) 
               <div className="demo-frame-title">Meeting Notes</div>
               <div className="demo-frame-text">
                 <span>The meeting lasted </span>
-                <mark className="demo-mark">forever and nobody left happy</mark>
+                <span className="tracked-del">forever and nobody left happy</span>
+                {' '}
+                <span className="tracked-add">way too long</span>
                 <span>. </span>
                 <span className="demo-ping-inline">→ Ping: &ldquo;Make it punchy&rdquo;</span>
               </div>
@@ -36,16 +38,6 @@ export default function WelcomeOverlay({ onStart, onNew }: WelcomeOverlayProps) 
                 <div className="demo-fc-row">
                   <span className="demo-fc-label">Ping</span>
                   <span className="demo-fc-text">Make it punchy</span>
-                </div>
-                <div className="demo-fc-row">
-                  <span className="demo-fc-label">After</span>
-                  <span className="demo-fc-text">
-                    The meeting lasted{' '}
-                    <span className="tracked-del">forever and nobody left happy</span>
-                    {' '}
-                    <span className="tracked-add">way too long</span>
-                    {'.'}
-                  </span>
                 </div>
                 <div className="demo-fc-btns">
                   <button className="btn-accept" tabIndex={-1}>✓ Accept all</button>
@@ -56,9 +48,10 @@ export default function WelcomeOverlay({ onStart, onNew }: WelcomeOverlayProps) 
           </div>
         </div>
 
-        <p className="overlay-note">
-          No account needed. Share the URL — anyone with the link can edit. Content is removed after 1 hour of inactivity.
-        </p>
+        <div className="overlay-note">
+          <p>No account needed. Share the URL — anyone with the link can edit.</p>
+          <p className="overlay-note-warn">Content is automatically deleted after 1 hour of inactivity.</p>
+        </div>
 
         <div className="overlay-footer">
           <div className="overlay-links">

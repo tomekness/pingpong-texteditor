@@ -13,9 +13,9 @@ export default function DeleteConfirmOverlay({ onCancel, onConfirm }: DeleteConf
         <p className="overlay-body">
           All content will be permanently removed. This cannot be undone.
         </p>
-        <div className="overlay-actions">
+        <div className="overlay-actions overlay-actions--col">
+          <button className="btn-overlay-danger" onClick={onConfirm}>Delete document</button>
           <button className="btn-overlay-ghost" onClick={onCancel}>Cancel</button>
-          <button className="btn-overlay-danger" onClick={onConfirm}>Delete</button>
         </div>
       </div>
     </div>
