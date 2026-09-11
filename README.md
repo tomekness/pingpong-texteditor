@@ -2,18 +2,28 @@
 
 <img src="assets/logo.svg" width="60" alt="Pingpong Logo"/>
 
-Collaborative real-time editor for human + AI. Highlight text, leave an instruction — the opponent picks it up and writes back live.
+An instant AI text editor — open it, paste your text, and work on it with AI directly. Both you and the AI can edit the document at the same time. No account, no login, no setup.
 
 **Ping:** select text, type an instruction.  
 **Pong:** the revision appears in your editor with tracked changes — accept or reject inline.
 
+Typical use cases:
+
+- **Draft an email from bullet points** — paste your notes, select them, tell the AI what tone and length you want
+- **Translate** a text into another language
+- **Shorten** a long paragraph into something concise
+- **Improve grammar and style** of a quick message or short email
+- **Rewrite** a passage in a different register (more formal, more casual, simpler)
+
 ## How it works
 
-Visit the app and you land on a fresh document with a unique, unguessable URL. No account, no login.
+Open the app — you land instantly on a fresh document. No account, no login.
 
-- Share the URL — anyone with the link can read and edit
-- Select text and hover the 🏓 bubble (or press **Tab**) to send an instruction to the Opponent
-- Accept or reject each suggested change inline
+- Paste your text and start working
+- Select text and hover the 🏓 bubble (or press **Tab**) to send an instruction to the AI
+- The AI edits the document live — you see the changes as tracked edits and accept or reject inline
+- You and the AI can both type in the document at any time — it's a shared, live editor
+- Share the URL so others can join and edit too
 - Content is automatically removed after **1 hour of inactivity**
 - The delete button (top right) removes it immediately
 
@@ -35,9 +45,10 @@ cd pingpong
 
 cp .env.example .env
 # Fill in your values:
-#   LLM_API_KEY=...
-#   LLM_BASE_URL=http://your-host:3000/openai
-#   LLM_MODEL=your-model-name
+#   LLM_API_KEY=...          Bearer token for your LLM API
+#   LLM_BASE_URL=...         OpenAI-compatible base URL (see table below)
+#   LLM_MODEL=...            Model name, e.g. gpt-4o-mini or llama3.2
+#   ADMIN_PASSWORD=...       Password for the admin dashboard at /admin
 
 docker compose up -d
 ```
