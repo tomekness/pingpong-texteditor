@@ -1,6 +1,6 @@
-# 🏓 Pingpong
 
-<img src="assets/logo.svg" width="60" alt="Pingpong Logo"/>
+# Pingpong <img src="assets/logo.svg" width="60" alt="Pingpong Logo"/>  
+
 
 An instant AI text editor — open it, paste your text, and work on it with AI directly. Both you and the AI can edit the document at the same time. No account, no login, no setup.
 
