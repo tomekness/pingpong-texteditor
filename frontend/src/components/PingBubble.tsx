@@ -83,7 +83,7 @@ export default function PingBubble({ editor, docId, ydoc, setPreviewRange }: Pin
     setSending(true)
 
     const { from, to } = editor.state.selection
-    const selectedText = editor.state.doc.textBetween(from, to, ' ')
+    const selectedText = editor.state.doc.textBetween(from, to, '\n')
     const context = editor.getText()
 
     const pingId = `ping-${Date.now()}`

@@ -67,10 +67,7 @@ async function handlePing({ documentName, pingId, ping }) {
       revision,
       messages: [
         ...(ping.messages || []),
-        {
-          role: 'assistant',
-          text: `Revised: "${ping.selectedText.slice(0, 60)}${ping.selectedText.length > 60 ? '…' : ''}"`,
-        },
+        { role: 'assistant', text: revision },
       ],
     })
     console.log(`[ping] ✓ done — id="${pingId}"`)
@@ -92,17 +89,7 @@ async function callLLM(ping) {
     },
     body: JSON.stringify({
       model: MODEL,
-      messages: [
-        {
-          role: 'system',
-          content: `You are a precise editor. You only revise the highlighted text passage.
-Reply ONLY with the revised text — no explanation, no quotes, no prefix.`,
-        },
-        {
-          role: 'user',
-          content: `Context:\n---\n${ping.context}\n---\n\nSelected passage:\n"${ping.selectedText}"\n\nInstruction: ${ping.instruction}`,
-        },
-      ],
+      messages: buildMessages(ping),
     }),
   })
 
@@ -113,6 +100,31 @@ Reply ONLY with the revised text — no explanation, no quotes, no prefix.`,
 
   const data = await response.json()
   return data.choices[0].message.content.trim()
+}
+
+// ── Build LLM message list (supports follow-up conversation) ─────────────────
+function buildMessages(ping) {
+  const system = {
+    role: 'system',
+    content: `You are a precise editor. You only revise the highlighted text passage.
+Reply ONLY with the revised text — no explanation, no quotes, no prefix.`,
+  }
+  const initial = {
+    role: 'user',
+    content: `Context:\n---\n${ping.context}\n---\n\nSelected passage:\n"${ping.selectedText}"\n\nInstruction: ${ping.instruction}`,
+  }
+
+  if (!ping.messages || ping.messages.length === 0) {
+    return [system, initial]
+  }
+
+  // Follow-up: include conversation history (excluding the last user message
+  // which is the follow-up instruction — the model should respond to it next)
+  const history = ping.messages.map(m => ({
+    role: m.role === 'user' ? 'user' : 'assistant',
+    content: m.text,
+  }))
+  return [system, initial, ...history]
 }
 
 // ── Word-level diff (LCS) ─────────────────────────────────────────────────────
@@ -138,27 +150,76 @@ function wordDiff(oldStr, newStr) {
 function applyRevision(xmlFragment, ping, revision) {
   const target = ping.selectedText
 
-  function walk(el) {
+  function findAndApply(el, text, rev) {
     if (el instanceof Y.XmlText) {
       const content = el.toString()
-      const idx = content.indexOf(target)
+      const idx = content.indexOf(text)
       if (idx !== -1) {
-        applyDiffedRevision(el, idx, target, revision)
+        applyDiffedRevision(el, idx, text, rev)
         return true
       }
     } else if (el && typeof el.toArray === 'function') {
       for (const child of el.toArray()) {
-        if (walk(child)) return true
+        if (findAndApply(child, text, rev)) return true
       }
     }
     return false
   }
 
-  if (!walk(xmlFragment)) {
-    console.warn(`[ping] ⚠ text not found in doc: "${target.slice(0, 60)}"`)
-  } else {
+  // Single-paragraph: direct search
+  if (findAndApply(xmlFragment, target, revision)) {
     console.log(`[ping] ✎ tracked: "${target.slice(0, 40)}" → "${revision.slice(0, 40)}"`)
+    return
   }
+
+  // Multi-paragraph: selectedText contains '\n' separating individual paragraphs.
+  // Find each paragraph in its own XmlText node. Insert the full revision in the
+  // first matching node, mark all matched paragraphs as deleted.
+  if (target.includes('\n')) {
+    const paragraphs = target.split('\n').filter(p => p.trim().length > 0)
+    const hunkId = 'h0'
+    let firstDone = false
+    let applied = 0
+
+    function markParagraph(el, para) {
+      if (el instanceof Y.XmlText) {
+        const content = el.toString()
+        const idx = content.indexOf(para)
+        if (idx !== -1) {
+          if (!firstDone) {
+            // Insert full revision before original text; shift original right
+            el.insert(idx, revision, { trackedInsert: { hunkId } })
+            el.format(idx + revision.length, para.length, { trackedDelete: { hunkId } })
+            firstDone = true
+          } else {
+            el.format(idx, para.length, { trackedDelete: { hunkId } })
+          }
+          applied++
+          return true
+        }
+      } else if (el && typeof el.toArray === 'function') {
+        for (const child of el.toArray()) {
+          if (markParagraph(child, para)) return true
+        }
+      }
+      return false
+    }
+
+    for (const para of paragraphs) markParagraph(xmlFragment, para)
+
+    if (applied > 0) {
+      console.log(`[ping] ✎ multi-para tracked: ${applied}/${paragraphs.length} paragraphs`)
+      return
+    }
+  }
+
+  // Follow-up fallback: previous revision text may still be in the document
+  if (ping.revision && findAndApply(xmlFragment, ping.revision, revision)) {
+    console.log(`[ping] ✎ follow-up tracked: "${ping.revision.slice(0, 40)}" → "${revision.slice(0, 40)}"`)
+    return
+  }
+
+  console.warn(`[ping] ⚠ text not found in doc: "${target.slice(0, 60)}"`)
 }
 
 function applyDiffedRevision(el, idx, oldText, newText) {

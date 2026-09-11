@@ -20,6 +20,7 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
     const current = pingMap.get(pingId) as any
     pingMap.set(pingId, {
       ...current,
+      status: 'pending',
       messages: [...(current.messages || []), { role: 'user', text: input.trim() }],
     })
     setInput('')
@@ -41,8 +42,14 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
 
   if (ping.status === 'accepted' || ping.status === 'rejected') return null
 
+  const isWorking = ping.status === 'pending' || ping.status === 'working'
+  const statusLabel = ping.status === 'pending' ? 'Sending request…' : ping.status === 'working' ? 'AI is revising…' : null
+
   return (
     <div className="inline-chat">
+      <div className="inline-chat-header">
+        <span className="inline-chat-phase">{ping.status === 'answered' ? 'Revision ready' : ping.status === 'error' ? 'Error' : 'In progress'}</span>
+      </div>
       <div className="inline-chat-messages">
         <div className="chat-msg system">
           <span className="chat-label">Ping</span>
@@ -50,24 +57,35 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
         </div>
         {(ping.messages || []).map((msg: any, i: number) => (
           <div key={i} className={`chat-msg ${msg.role}`}>
-            <span className="chat-label">{msg.role === 'user' ? 'You' : 'Opponent'}</span>
-            <span>{msg.text}</span>
+            <span className="chat-label">{msg.role === 'user' ? 'You' : 'AI'}</span>
+            <span className="chat-msg-text">{msg.text}</span>
           </div>
         ))}
-        {(ping.status === 'pending' || ping.status === 'working') && (
-          <div className="chat-msg thinking">Opponent is thinking…</div>
+        {isWorking && statusLabel && (
+          <div className="chat-msg thinking">
+            <span className="chat-thinking-dot" />
+            {statusLabel}
+          </div>
+        )}
+        {ping.status === 'error' && (
+          <div className="chat-msg error">
+            <span className="chat-label">Error</span>
+            <span>{ping.error || 'Something went wrong.'}</span>
+          </div>
         )}
       </div>
-      <div className="inline-chat-actions">
-        <button className="btn-accept" onClick={acceptPing} title="Apply the suggested revision to the document">✓ Accept all</button>
-        <button className="btn-reject" onClick={rejectPing} title="Discard the suggested revision">✗ Reject all</button>
-      </div>
+      {ping.status === 'answered' && (
+        <div className="inline-chat-actions">
+          <button className="btn-accept" onClick={acceptPing} title="Apply the suggested revision to the document">✓ Accept</button>
+          <button className="btn-reject" onClick={rejectPing} title="Discard the suggested revision">✗ Reject</button>
+        </div>
+      )}
       <div className="inline-chat-input">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-          placeholder="Reply or correction…"
+          placeholder={ping.status === 'answered' ? 'Request another change…' : 'Add a note…'}
         />
       </div>
     </div>

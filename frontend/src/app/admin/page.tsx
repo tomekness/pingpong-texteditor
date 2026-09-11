@@ -38,7 +38,11 @@ export default function AdminPage() {
         headers: { Authorization: `Bearer ${pw}` },
       })
       if (res.status === 401) { setError('Wrong password'); setToken(''); sessionStorage.removeItem('admin-token'); return }
-      if (!res.ok) { setError(`Error ${res.status}`); return }
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        setError(body?.error ?? `Error ${res.status}`)
+        return
+      }
       setStats(await res.json())
       setLastRefresh(new Date())
     } catch {
