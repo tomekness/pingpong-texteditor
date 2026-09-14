@@ -241,7 +241,8 @@ body {
 .editor-content h2 { font-size: 1.35rem; font-weight: 600; margin: 1em 0 0.4em; }
 .editor-content h3 { font-size: 1.1rem; font-weight: 600; margin: 0.8em 0 0.3em; }
 .editor-content ul, .editor-content ol { padding-left: 1.5em; margin-bottom: 1em; }
-.editor-content li { margin-bottom: 0.25em; }
+.editor-content li { margin-bottom: 0.05em; }
+.editor-content li p { margin-bottom: 0; }
 .editor-content code { font-family: monospace; background: rgba(0,0,0,0.06); padding: 0.1em 0.3em; border-radius: 3px; font-size: 0.88em; }
 .editor-content pre { background: #1A1A1A; color: #E8E0D0; padding: 16px; border-radius: 4px; overflow-x: auto; margin-bottom: 1em; }
 .editor-content pre code { background: none; padding: 0; color: inherit; }

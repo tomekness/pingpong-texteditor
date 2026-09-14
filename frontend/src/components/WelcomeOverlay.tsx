@@ -40,8 +40,8 @@ export default function WelcomeOverlay({ onStart, onNew }: WelcomeOverlayProps) 
                   <span className="demo-fc-text">Make it punchy</span>
                 </div>
                 <div className="demo-fc-btns">
-                  <button className="btn-accept" tabIndex={-1}>✓ Accept all</button>
-                  <button className="btn-reject" tabIndex={-1}>✗ Reject all</button>
+                  <button className="btn-accept" tabIndex={-1}>Accept all</button>
+                  <button className="btn-reject" tabIndex={-1}>Reject all</button>
                 </div>
               </div>
             </div>
