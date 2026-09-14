@@ -27,20 +27,20 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
   }
 
   const acceptPing = () => {
-    commitRevision(ydoc)
     const pingMap = ydoc.getMap('pings')
-    const current = pingMap.get(pingId) as any
-    pingMap.set(pingId, { ...current, status: 'accepted' })
+    ydoc.transact(() => {
+      commitRevision(ydoc)
+      pingMap.delete(pingId)
+    })
   }
 
   const rejectPing = () => {
-    revertRevision(ydoc)
     const pingMap = ydoc.getMap('pings')
-    const current = pingMap.get(pingId) as any
-    pingMap.set(pingId, { ...current, status: 'rejected' })
+    ydoc.transact(() => {
+      revertRevision(ydoc)
+      pingMap.delete(pingId)
+    })
   }
-
-  if (ping.status === 'accepted' || ping.status === 'rejected') return null
 
   const isWorking = ping.status === 'pending' || ping.status === 'working'
   const statusLabel = ping.status === 'pending' ? 'Sending request…' : ping.status === 'working' ? 'AI is revising…' : null

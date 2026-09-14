@@ -58,17 +58,19 @@ async function handlePing({ documentName, pingId, ping }) {
 
   try {
     const revision = await callLLM(ping)
-    applyRevision(ydoc.getXmlFragment('default'), ping, revision)
 
-    // Status 'answered' (not 'pending') so observer won't re-trigger
-    pingMap.set(pingId, {
-      ...ping,
-      status: 'answered',
-      revision,
-      messages: [
-        ...(ping.messages || []),
-        { role: 'assistant', text: revision },
-      ],
+    // Transact so tracked changes + status arrive atomically at all clients
+    ydoc.transact(() => {
+      applyRevision(ydoc.getXmlFragment('default'), ping, revision)
+      pingMap.set(pingId, {
+        ...ping,
+        status: 'answered',
+        revision,
+        messages: [
+          ...(ping.messages || []),
+          { role: 'assistant', text: revision },
+        ],
+      })
     })
     console.log(`[ping] ✓ done — id="${pingId}"`)
   } catch (err) {
