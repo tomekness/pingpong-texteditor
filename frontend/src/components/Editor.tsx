@@ -21,10 +21,10 @@ import { TrackedDelete, TrackedInsert, TrackedChangesHunkButtons } from '@/lib/t
 
 const HOCUSPOCUS_URL =
   typeof window !== 'undefined'
-    ? `ws://${window.location.host}/ws`
+    ? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`
     : 'ws://localhost/ws'
 
-const INACTIVITY_MS = 3 * 60 * 1000 // 3 min (set to 60 * 60 * 1000 for production)
+const INACTIVITY_MS = 60 * 60 * 1000
 
 export default function Editor({ docId }: { docId: string }) {
   const [connected, setConnected] = useState(false)
