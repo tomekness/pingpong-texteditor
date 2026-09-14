@@ -85,7 +85,8 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-          placeholder={ping.status === 'answered' ? 'Request another change…' : 'Add a note…'}
+          placeholder={ping.status === 'answered' ? 'Accept or reject before requesting another change' : 'Add a note…'}
+          disabled={isWorking || ping.status === 'answered'}
         />
       </div>
     </div>
