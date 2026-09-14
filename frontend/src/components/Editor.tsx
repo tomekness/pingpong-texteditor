@@ -146,6 +146,17 @@ export default function Editor({ docId }: { docId: string }) {
     }
   }, [ydoc, provider])
 
+  useEffect(() => {
+    const handleStateless = ({ payload }: { payload: string }) => {
+      try {
+        const msg = JSON.parse(payload)
+        if (msg.type === 'document-deleted') window.location.href = '/'
+      } catch {}
+    }
+    provider.on('stateless', handleStateless)
+    return () => { provider.off('stateless', handleStateless) }
+  }, [provider])
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [

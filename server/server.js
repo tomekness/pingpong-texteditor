@@ -13,6 +13,10 @@ await mkdir('/data', { recursive: true })
 
 // ── Hocuspocus WebSocket server ───────────────────────────────────────────────
 
+// Tracks documents that have been user-deleted so onStoreDocument can block
+// the SQLite extension from re-persisting them when connections close.
+const deletedDocs = new Set()
+
 const server = new Hocuspocus({
   port: 1234,
   quiet: false,
@@ -23,6 +27,12 @@ const server = new Hocuspocus({
 
   async onDisconnect({ documentName }) {
     console.log(`[disconnect] doc="${documentName}"`)
+  },
+
+  async onStoreDocument({ documentName }) {
+    if (deletedDocs.has(documentName)) {
+      throw new Error(`Document "${documentName}" was deleted — skipping persistence`)
+    }
   },
 
   async onLoadDocument({ documentName, document }) {
@@ -184,13 +194,25 @@ createServer(async (req, res) => {
     const name = decodeURIComponent(match[1])
     const db = openDb()
     try {
+      // Mark deleted FIRST so onStoreDocument blocks re-persistence when connections close
+      deletedDocs.add(name)
+
+      // Notify all connected clients so they redirect before being kicked
+      const doc = server.documents?.get(name)
+      if (doc) {
+        try { doc.broadcastStateless(JSON.stringify({ type: 'document-deleted' })) } catch {}
+      }
+
       await dbRun(db, 'DELETE FROM documents WHERE name = ?', [name])
       await dbRun(db, 'DELETE FROM document_meta WHERE name = ?', [name])
-      // Kick all connected clients so Hocuspocus drops the in-memory document
       server.closeConnections(name)
+
+      setTimeout(() => deletedDocs.delete(name), 30000)
+
       res.writeHead(200)
       res.end(JSON.stringify({ ok: true }))
     } catch (err) {
+      deletedDocs.delete(name)
       res.writeHead(500)
       res.end(JSON.stringify({ error: err.message }))
     } finally {
