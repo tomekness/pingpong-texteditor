@@ -26,6 +26,25 @@ const HOCUSPOCUS_URL =
 
 const INACTIVITY_MS = 60 * 60 * 1000
 
+const GUEST_ADJECTIVES = ['Swift', 'Quiet', 'Bold', 'Bright', 'Sharp', 'Calm', 'Quick', 'Keen']
+const GUEST_NOUNS = ['Panda', 'Fox', 'Owl', 'Wolf', 'Lynx', 'Bear', 'Hawk', 'Deer']
+const GUEST_COLORS = ['#3B6FD4', '#E74C3C', '#27AE60', '#8E44AD', '#E67E22', '#16A085', '#C0392B', '#2980B9']
+
+function getSessionUser() {
+  const key = 'pingpong_guest'
+  try {
+    const stored = sessionStorage.getItem(key)
+    if (stored) return JSON.parse(stored)
+    const name = `${GUEST_ADJECTIVES[Math.floor(Math.random() * GUEST_ADJECTIVES.length)]} ${GUEST_NOUNS[Math.floor(Math.random() * GUEST_NOUNS.length)]}`
+    const color = GUEST_COLORS[Math.floor(Math.random() * GUEST_COLORS.length)]
+    const user = { name, color }
+    sessionStorage.setItem(key, JSON.stringify(user))
+    return user
+  } catch {
+    return { name: 'Guest', color: '#3B6FD4' }
+  }
+}
+
 export default function Editor({ docId }: { docId: string }) {
   const [connected, setConnected] = useState(false)
   const [pings, setPings] = useState<Record<string, any>>({})
@@ -164,7 +183,7 @@ export default function Editor({ docId }: { docId: string }) {
       Collaboration.configure({ document: ydoc }),
       CollaborationCursor.configure({
         provider,
-        user: { name: 'You', color: '#1A1A1A' },
+        user: getSessionUser(),
       }),
       Placeholder.configure({ placeholder: 'Start writing…' }),
       Typography,
