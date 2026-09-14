@@ -2,8 +2,8 @@
   <!-- Paddle 1 (behind) — dark -->
   <g transform="translate(50,50) rotate(-45)">
     <rect x="-5" y="-2" width="10" height="30" rx="3" fill="#8B6233" stroke="#6B4A22" stroke-width="1.5"/>
-    <circle cx="0" cy="-20" r="18" fill="#2C3E50" stroke="#1A252F" stroke-width="2"/>
-    <circle cx="0" cy="-20" r="10" fill="none" stroke="#3D5166" stroke-width="1.5" stroke-dasharray="2 2" opacity="0.6"/>
+    <circle cx="0" cy="-20" r="18" fill="#3B6FD4" stroke="#2A55B0" stroke-width="2"/>
+    <circle cx="0" cy="-20" r="10" fill="none" stroke="#6A99E8" stroke-width="1.5" stroke-dasharray="2 2" opacity="0.6"/>
   </g>
   <!-- Paddle 2 (front) — red -->
   <g transform="translate(50,50) rotate(45)">

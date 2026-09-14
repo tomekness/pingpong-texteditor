@@ -49,8 +49,9 @@ export default function WelcomeOverlay({ onStart, onNew }: WelcomeOverlayProps) 
         </div>
 
         <div className="overlay-note">
-          <p>No account needed. Share the URL — anyone with the link can edit.</p>
-          <p className="overlay-note-warn">Content is automatically deleted after 1 hour of inactivity.</p>
+          <p className="overlay-note-warn">No account needed.</p>
+          <p>Share the URL — anyone with the link can edit.</p>
+          <p>Content is automatically deleted after 1 hour of inactivity.</p>
         </div>
 
         <div className="overlay-footer">

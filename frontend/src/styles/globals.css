@@ -13,8 +13,8 @@
   --added:       rgba(100, 160, 100, 0.25);
   --removed:     rgba(180, 80, 80, 0.2);
   --ping-bubble: #FFFFFF;
-  --font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-ui:     system-ui, -apple-system, sans-serif;
+  --font:        var(--font-inter), system-ui, sans-serif;
+  --font-ui:     var(--font-inter), system-ui, sans-serif;
   --topbar-h:    48px;
   --toolbar-h:   48px;
 }
@@ -35,8 +35,8 @@ body {
   border-bottom: 1px solid #E8E8E6;
   display: flex;
   align-items: center;
-  padding: 0 20px;
-  gap: 16px;
+  padding: 0 14px;
+  gap: 12px;
   z-index: 100;
 }
 
@@ -53,7 +53,7 @@ body {
   flex: 1;
   gap: 14px;
   font-family: var(--font-ui);
-  font-size: 0.78rem;
+  font-size: 0.83rem;
   color: var(--text-muted);
 }
 
@@ -87,8 +87,9 @@ body {
   border: none;
   color: var(--text-muted);
   border-radius: 5px;
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
+  font-size: 1rem;
   cursor: pointer;
   transition: background 0.1s, color 0.1s;
 }
@@ -114,8 +115,8 @@ body {
 .home-header h1 {
   font-family: var(--font-ui);
   font-size: 2.2rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   line-height: 1.1;
 }
 
@@ -140,7 +141,7 @@ body {
   position: relative;
   display: flex;
   align-items: center;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .doc-item-row:hover .doc-delete-btn { opacity: 1; }
@@ -152,7 +153,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 14px 16px;
-  border-radius: 6px;
+  border-radius: 4px;
   text-decoration: none;
   color: var(--text);
   font-family: var(--font-ui);
@@ -196,7 +197,7 @@ body {
   color: var(--text);
   background: rgba(0,0,0,0.05);
   border: none;
-  border-radius: 7px;
+  border-radius: 5px;
   padding: 13px 16px;
   margin-bottom: 20px;
   transition: background 0.1s;
@@ -217,9 +218,9 @@ body {
   outline: none;
   font-family: var(--font-ui);
   font-size: 2rem;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.01em;
   margin-bottom: 24px;
 }
 .doc-title-input::placeholder { color: var(--border); }
@@ -242,7 +243,7 @@ body {
 .editor-content ul, .editor-content ol { padding-left: 1.5em; margin-bottom: 1em; }
 .editor-content li { margin-bottom: 0.25em; }
 .editor-content code { font-family: monospace; background: rgba(0,0,0,0.06); padding: 0.1em 0.3em; border-radius: 3px; font-size: 0.88em; }
-.editor-content pre { background: #1A1A1A; color: #E8E0D0; padding: 16px; border-radius: 6px; overflow-x: auto; margin-bottom: 1em; }
+.editor-content pre { background: #1A1A1A; color: #E8E0D0; padding: 16px; border-radius: 4px; overflow-x: auto; margin-bottom: 1em; }
 .editor-content pre code { background: none; padding: 0; color: inherit; }
 .editor-content blockquote { border-left: 3px solid var(--border); padding-left: 16px; color: var(--text-muted); margin-bottom: 1em; }
 .editor-content s { color: var(--text-muted); }
@@ -306,7 +307,7 @@ body {
   z-index: 50;
   background: var(--ping-bubble);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
   padding: 8px 10px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   display: flex;
@@ -367,7 +368,7 @@ body {
 .inline-chat {
   display: block;
   background: var(--bg-dark);
-  border-radius: 8px;
+  border-radius: 5px;
   padding: 16px;
   font-family: var(--font-ui);
   font-size: 0.85rem;
@@ -485,7 +486,7 @@ body {
   align-items: center;
   gap: 2px;
   background: #1A1A1A;
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 6px 8px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.25);
   z-index: 100;
@@ -495,7 +496,7 @@ body {
   background: transparent;
   border: none;
   color: #CCC5B5;
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 5px 9px;
   font-family: var(--font-ui);
   font-size: 0.8rem;
@@ -525,7 +526,7 @@ body {
   padding: 0;
   cursor: pointer;
   opacity: 0.7;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: opacity 0.15s;
   flex-shrink: 0;
 }
@@ -534,10 +535,10 @@ body {
 .topbar-new-btn {
   background: none;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 3px 10px;
+  border-radius: 4px;
+  padding: 5px 13px;
   font-family: var(--font-ui);
-  font-size: 0.78rem;
+  font-size: 0.83rem;
   font-weight: 500;
   color: var(--text-muted);
   cursor: pointer;
@@ -567,7 +568,7 @@ body {
   right: 0;
   background: #fff;
   border: 1px solid #E8E8E6;
-  border-radius: 8px;
+  border-radius: 5px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.12);
   padding: 4px;
   display: flex;
@@ -613,7 +614,7 @@ body {
 
 .overlay-card {
   background: #FAFAF8;
-  border-radius: 14px;
+  border-radius: 4px;
   padding: 40px 44px;
   max-width: 620px;
   width: 100%;
@@ -628,7 +629,7 @@ body {
 
 .overlay-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   margin-bottom: 24px;
 }
@@ -636,10 +637,10 @@ body {
 .overlay-title {
   font-family: var(--font-ui);
   font-size: 1.55rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   color: var(--text);
-  margin-bottom: 2px;
+  margin-bottom: 12px;
 }
 
 .overlay-title--sm {
@@ -669,7 +670,7 @@ body {
 
 /* ─── Ping-Pong Demo ────────────────────────────────── */
 .overlay-demo {
-  border-radius: 10px;
+  border-radius: 4px;
   margin-bottom: 20px;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -729,7 +730,7 @@ body {
 
 .demo-frame-chat {
   background: var(--bg-dark);
-  border-radius: 7px;
+  border-radius: 5px;
   padding: 12px 14px;
   margin-left: 32px;
   display: flex;
@@ -766,12 +767,12 @@ body {
   font-family: var(--font-ui);
   font-size: 0.85rem;
   color: var(--text-muted);
-  margin-bottom: 28px;
+  margin-bottom: 40px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 10px;
 }
 
 .overlay-note-warn {
@@ -814,7 +815,7 @@ body {
   background: var(--text);
   color: #F2F2F0;
   border: none;
-  border-radius: 7px;
+  border-radius: 5px;
   padding: 9px 18px;
   font-family: var(--font-ui);
   font-size: 0.88rem;
@@ -848,7 +849,7 @@ body {
 .btn-overlay-ghost {
   background: none;
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: 5px;
   padding: 8px 16px;
   font-family: var(--font-ui);
   font-size: 0.85rem;
@@ -864,7 +865,7 @@ body {
   background: #c0392b;
   color: white;
   border: none;
-  border-radius: 7px;
+  border-radius: 5px;
   padding: 8px 16px;
   font-family: var(--font-ui);
   font-size: 0.85rem;
@@ -887,7 +888,7 @@ body {
 
 .admin-login-card {
   background: #fff;
-  border-radius: 14px;
+  border-radius: 4px;
   padding: 40px 44px;
   max-width: 340px;
   width: 100%;
@@ -915,7 +916,7 @@ body {
 .admin-login-input {
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: 5px;
   padding: 9px 12px;
   font-family: var(--font-ui);
   font-size: 0.9rem;
@@ -997,7 +998,7 @@ body {
 
 .stat-card {
   background: #fff;
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 20px;
   border: 1px solid #E8E8E6;
 }
@@ -1088,7 +1089,7 @@ body {
   min-width: 0;
   padding: 9px 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 5px;
   font-family: var(--font-ui);
   font-size: 0.82rem;
   color: var(--text);
