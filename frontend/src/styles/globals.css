@@ -1116,3 +1116,12 @@ body {
   padding: 9px 18px;
   font-size: 0.85rem;
 }
+
+/* ─── Print / PDF export ────────────────────────────── */
+@media print {
+  .topbar, .toolbar, .ping-bubble,
+  .overlay-backdrop, [data-tippy-root] { display: none !important; }
+  body { background: #fff; }
+  .editor-wrap { padding: 0 !important; }
+  .tiptap { box-shadow: none !important; padding: 0 !important; }
+}

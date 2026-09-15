@@ -284,7 +284,7 @@ export default function Editor({ docId }: { docId: string }) {
     resetTimerRef.current?.()
   }, [docId, ydoc, showTimerReset])
 
-  const handleDownload = useCallback((format: 'txt' | 'md' | 'doc') => {
+  const handleDownload = useCallback(async (format: 'txt' | 'md' | 'docx' | 'pdf') => {
     if (!editor) return
     setShowSave(false)
     const name = (title || 'document').replace(/[^a-z0-9äöüÄÖÜß]/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'document'
@@ -295,10 +295,16 @@ export default function Editor({ docId }: { docId: string }) {
     } else if (format === 'md') {
       const md = jsonToMd(editor.getJSON())
       triggerDownload(new Blob([md], { type: 'text/markdown' }), `${name}.md`)
-    } else if (format === 'doc') {
-      const html = editor.getHTML()
-      const docHtml = `<!DOCTYPE html>\n<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>\n<head><meta charset='utf-8'><style>body{font-family:Calibri,sans-serif;font-size:11pt;line-height:1.6;}del{text-decoration:line-through;}</style></head>\n<body>${title ? `<h1>${title}</h1>` : ''}${html}</body></html>`
-      triggerDownload(new Blob(['﻿', docHtml], { type: 'application/octet-stream' }), `${name}.doc`)
+    } else if (format === 'docx') {
+      const res = await fetch('/api/export/docx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ json: editor.getJSON(), title }),
+      })
+      const blob = await res.blob()
+      triggerDownload(blob, `${name}.docx`)
+    } else if (format === 'pdf') {
+      window.print()
     }
   }, [editor, title])
 
@@ -494,7 +500,8 @@ export default function Editor({ docId }: { docId: string }) {
             <div className="overlay-actions overlay-actions--col">
               <button className="overlay-start-btn" onClick={() => handleDownload('md')}>Markdown (.md)</button>
               <button className="overlay-start-btn overlay-start-btn--secondary" onClick={() => handleDownload('txt')}>Plain text (.txt)</button>
-              <button className="overlay-start-btn overlay-start-btn--secondary" onClick={() => handleDownload('doc')}>Word document (.doc)</button>
+              <button className="overlay-start-btn overlay-start-btn--secondary" onClick={() => handleDownload('docx')}>Word document (.docx)</button>
+              <button className="overlay-start-btn overlay-start-btn--secondary" onClick={() => handleDownload('pdf')}>PDF</button>
               <button className="btn-overlay-ghost" onClick={() => setShowSave(false)}>Cancel</button>
             </div>
           </div>
