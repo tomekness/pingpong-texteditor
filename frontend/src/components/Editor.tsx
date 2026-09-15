@@ -145,6 +145,11 @@ export default function Editor({ docId }: { docId: string }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && showWelcome) {
+        sessionStorage.setItem(`welcomed-${docId}`, '1')
+        setShowWelcome(false)
+        return
+      }
       if (e.key !== 'Escape') return
       if (showDeleteConfirm) { setShowDeleteConfirm(false); return }
       if (showNewConfirm) { setShowNewConfirm(false); return }
@@ -154,7 +159,7 @@ export default function Editor({ docId }: { docId: string }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [showDeleteConfirm, showNewConfirm, showWelcome, showSave, showCopyLink])
+  }, [showDeleteConfirm, showNewConfirm, showWelcome, showSave, showCopyLink, docId])
 
   useEffect(() => {
     const pingMap = ydoc.getMap('pings')

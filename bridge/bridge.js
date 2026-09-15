@@ -250,8 +250,8 @@ function applyRevision(xmlFragment, ping, revision) {
           const idx = content.indexOf(para)
           if (idx !== -1) {
             if (!firstDone) {
-              el.insert(idx, revision, { trackedInsert: { hunkId } })
-              el.format(idx + revision.length, para.length, { trackedDelete: { hunkId } })
+              el.format(idx, para.length, { trackedDelete: { hunkId } })
+              el.insert(idx + para.length, revision, { trackedInsert: { hunkId } })
               firstDone = true
             } else {
               el.format(idx, para.length, { trackedDelete: { hunkId } })

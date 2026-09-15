@@ -4,6 +4,9 @@ import { Editor } from '@tiptap/react'
 import { useEffect, useRef, useState } from 'react'
 import * as Y from 'yjs'
 
+const TOPBAR_H = 48
+const TOOLBAR_H = 60
+
 interface PingBubbleProps {
   editor: Editor | null
   docId: string
@@ -21,24 +24,73 @@ export default function PingBubble({ editor, docId, ydoc, setPreviewRange }: Pin
   useEffect(() => {
     if (!editor) return
 
+    // Clamp a viewport-coordinate top so the bubble stays in the visible area.
+    // If the position lands in the lower half of the viewport (e.g. after Cmd+A),
+    // snap to vertical center instead of hugging the bottom.
+    const clamp = (viewportTop: number) => {
+      const mid = window.innerHeight / 2
+      if (viewportTop > mid) return mid
+      return Math.max(TOPBAR_H + 16, Math.min(viewportTop, window.innerHeight - TOOLBAR_H - 40))
+    }
+
+    // Position bubble using ProseMirror coords — returns false if it fails
+    const positionFromPM = (): boolean => {
+      const { to } = editor.state.selection
+      const editorRect = editor.view.dom.getBoundingClientRect()
+      try {
+        const safePos = Math.max(1, Math.min(to - 1, editor.state.doc.content.size - 1))
+        const coords = editor.view.coordsAtPos(safePos)
+        setBubble({ top: clamp(coords.top) - editorRect.top - 8, left: coords.right - editorRect.left + 8 })
+        return true
+      } catch {
+        return false
+      }
+    }
+
+    // Fallback: position bubble using the browser DOM selection rect
+    const positionFromDOM = (): boolean => {
+      const sel = window.getSelection()
+      if (!sel || sel.isCollapsed || sel.rangeCount === 0) return false
+      const range = sel.getRangeAt(0)
+      const rect = range.getBoundingClientRect()
+      if (!rect.width && !rect.height) return false
+      const editorRect = editor.view.dom.getBoundingClientRect()
+      setBubble({ top: clamp(rect.top) - editorRect.top - 8, left: rect.right - editorRect.left + 8 })
+      return true
+    }
+
+    // Fires for all in-editor selections (keyboard, mouse, Cmd+A)
     const handleSelectionUpdate = () => {
       const { from, to } = editor.state.selection
       if (from === to) { setBubble(null); setActive(false); setPreviewRange(null); return }
-
-      const domSelection = window.getSelection()
-      if (!domSelection || domSelection.rangeCount === 0) return
-      const range = domSelection.getRangeAt(0)
-      const rect = range.getBoundingClientRect()
-      const editorRect = editor.view.dom.getBoundingClientRect()
-
-      setBubble({
-        top: rect.top - editorRect.top - 8,
-        left: rect.right - editorRect.left + 8,
-      })
+      if (!positionFromPM()) positionFromDOM()
       setActive(false)
     }
 
-    // Tab on the editor DOM focuses the ping input when bubble is visible
+    // Fires for drags that START outside the editor (PM never sees the mousedown)
+    const handleDocSelectionChange = () => {
+      const { from, to } = editor.state.selection
+      if (from !== to) return  // PM already handles this via selectionUpdate
+
+      const sel = window.getSelection()
+      if (!sel || sel.rangeCount === 0) return
+
+      const editorDom = editor.view.dom
+      const range = sel.getRangeAt(0)
+
+      if (sel.isCollapsed) {
+        if (editorDom.contains(range.startContainer)) { setBubble(null); setPreviewRange(null) }
+        return
+      }
+
+      // Only care if the selection reaches into the editor content
+      if (!editorDom.contains(range.startContainer) && !editorDom.contains(range.endContainer)) return
+
+      positionFromDOM()
+      setActive(false)
+    }
+
+    // Tab opens the ping input when the bubble is showing
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab' && bubble) {
         e.preventDefault()
@@ -50,9 +102,11 @@ export default function PingBubble({ editor, docId, ydoc, setPreviewRange }: Pin
     }
 
     editor.on('selectionUpdate', handleSelectionUpdate)
+    document.addEventListener('selectionchange', handleDocSelectionChange)
     editor.view.dom.addEventListener('keydown', handleKeyDown)
     return () => {
       editor.off('selectionUpdate', handleSelectionUpdate)
+      document.removeEventListener('selectionchange', handleDocSelectionChange)
       editor.view.dom.removeEventListener('keydown', handleKeyDown)
     }
   }, [editor, bubble, setPreviewRange])
