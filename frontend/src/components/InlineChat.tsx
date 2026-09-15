@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { useState } from 'react'
 import * as Y from 'yjs'
 import { commitRevision, revertRevision } from '@/lib/trackedChanges'
@@ -13,11 +14,17 @@ interface InlineChatProps {
 
 export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProps) {
   const [input, setInput] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [ping.messages?.length, ping.status])
 
   const sendMessage = () => {
     if (!input.trim()) return
     const pingMap = ydoc.getMap('pings')
     const current = pingMap.get(pingId) as any
+
     pingMap.set(pingId, {
       ...current,
       status: 'pending',
@@ -45,17 +52,20 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
   const isWorking = ping.status === 'pending' || ping.status === 'working'
   const statusLabel = ping.status === 'pending' ? 'Sending request…' : ping.status === 'working' ? 'AI is revising…' : null
 
+  const messages: any[] = ping.messages || []
+
   return (
     <div className="inline-chat">
       <div className="inline-chat-header">
         <span className="inline-chat-phase">{ping.status === 'answered' ? 'Revision ready' : ping.status === 'error' ? 'Error' : 'In progress'}</span>
+        <span className="inline-chat-turn-count">{messages.length > 0 ? `${Math.ceil(messages.length / 2)} turn${Math.ceil(messages.length / 2) !== 1 ? 's' : ''}` : ''}</span>
       </div>
       <div className="inline-chat-messages">
         <div className="chat-msg system">
           <span className="chat-label">Ping</span>
           <span>{ping.instruction}</span>
         </div>
-        {(ping.messages || []).map((msg: any, i: number) => (
+        {messages.map((msg: any, i: number) => (
           <div key={i} className={`chat-msg ${msg.role}`}>
             <span className="chat-label">{msg.role === 'user' ? 'You' : 'AI'}</span>
             <span className="chat-msg-text">{msg.text}</span>
@@ -73,6 +83,7 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
             <span>{ping.error || 'Something went wrong.'}</span>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
       {ping.status === 'answered' && (
         <div className="inline-chat-actions">
@@ -85,8 +96,8 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-          placeholder={ping.status === 'answered' ? 'Accept or reject before requesting another change' : 'Add a note…'}
-          disabled={isWorking || ping.status === 'answered'}
+          placeholder={isWorking ? 'Working…' : ping.status === 'answered' ? 'Refine the suggestion…' : 'Add a note…'}
+          disabled={isWorking}
         />
       </div>
     </div>

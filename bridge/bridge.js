@@ -57,10 +57,16 @@ async function handlePing({ documentName, pingId, ping }) {
   pingMap.set(pingId, { ...ping, status: 'working' })
 
   try {
-    const revision = await callLLM(ping)
+    const { revision, explanation } = await callLLM(ping)
 
-    // Transact so tracked changes + status arrive atomically at all clients
+    // Transact so tracked changes + status arrive atomically at all clients.
+    // For follow-ups, revert INSIDE this transact — the ydoc content is fully
+    // populated by now (synced fires before all updates arrive, so reverting
+    // immediately after sync sees an empty doc).
     ydoc.transact(() => {
+      if (ping.messages && ping.messages.length > 0) {
+        revertTrackedChanges(ydoc.getXmlFragment('default'))
+      }
       applyRevision(ydoc.getXmlFragment('default'), ping, revision)
       pingMap.set(pingId, {
         ...ping,
@@ -68,11 +74,12 @@ async function handlePing({ documentName, pingId, ping }) {
         revision,
         messages: [
           ...(ping.messages || []),
-          { role: 'assistant', text: revision },
+          // text = what's shown in chat; revision = what LLM produced (for follow-up context)
+          { role: 'assistant', text: explanation || revision, revision },
         ],
       })
     })
-    console.log(`[ping] ✓ done — id="${pingId}"`)
+    console.log(`[ping] ✓ done — id="${pingId}" explanation="${(explanation || '').slice(0, 60)}"`)
   } catch (err) {
     console.error(`[ping] ✗ error — id="${pingId}"`, err.message)
     pingMap.set(pingId, { ...ping, status: 'error', error: err.message })
@@ -101,7 +108,21 @@ async function callLLM(ping) {
   }
 
   const data = await response.json()
-  return data.choices[0].message.content.trim()
+  const raw = data.choices[0].message.content.trim()
+
+  // Parse JSON response: {revision, explanation}
+  // Collapse any internal newlines in revision — Y.XmlText newlines cause TipTap
+  // to split the paragraph, corrupting the tracked-change structure.
+  const sanitize = (s) => s.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim()
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed.revision && typeof parsed.revision === 'string') {
+      return { revision: sanitize(parsed.revision), explanation: (parsed.explanation || '').trim() || null }
+    }
+  } catch (_) {}
+
+  // Fallback: treat full response as revision with no explanation
+  return { revision: sanitize(raw), explanation: null }
 }
 
 // ── Build LLM message list (supports follow-up conversation) ─────────────────
@@ -109,7 +130,8 @@ function buildMessages(ping) {
   const system = {
     role: 'system',
     content: `You are a precise editor. You only revise the highlighted text passage.
-Reply ONLY with the revised text — no explanation, no quotes, no prefix.`,
+Respond ONLY with a JSON object — no other text before or after:
+{"revision": "<the revised text>", "explanation": "<one brief sentence explaining what you changed>"}`,
   }
   const initial = {
     role: 'user',
@@ -120,11 +142,10 @@ Reply ONLY with the revised text — no explanation, no quotes, no prefix.`,
     return [system, initial]
   }
 
-  // Follow-up: include conversation history (excluding the last user message
-  // which is the follow-up instruction — the model should respond to it next)
+  // Follow-up: use revision text (not explanation) for LLM context
   const history = ping.messages.map(m => ({
     role: m.role === 'user' ? 'user' : 'assistant',
-    content: m.text,
+    content: m.role === 'assistant' ? (m.revision || m.text) : m.text,
   }))
   return [system, initial, ...history]
 }
@@ -146,6 +167,37 @@ function wordDiff(oldStr, newStr) {
     else { ops.push({ type: 'delete', text: A[i] }); i++ }
   }
   return ops
+}
+
+// ── Revert all tracked changes in a Y.XmlFragment (bridge-side) ──────────────
+function revertTrackedChanges(xmlFragment) {
+  function processNode(el) {
+    if (el instanceof Y.XmlText) {
+      const delta = el.toDelta()
+      const ops = []
+      let pos = 0
+      for (const op of delta) {
+        const len = (op.insert || '').length
+        if (op.attributes?.trackedInsert) {
+          ops.push({ pos, len, type: 'delete' })
+        } else if (op.attributes?.trackedDelete) {
+          ops.push({ pos, len, type: 'clean' })
+        }
+        pos += len
+      }
+      ops.sort((a, b) => b.pos - a.pos)
+      for (const op of ops) {
+        if (op.type === 'delete') {
+          el.delete(op.pos, op.len)
+        } else {
+          el.format(op.pos, op.len, { trackedDelete: null })
+        }
+      }
+    } else if (el && typeof el.toArray === 'function') {
+      for (const child of el.toArray()) processNode(child)
+    }
+  }
+  processNode(xmlFragment)
 }
 
 // ── Apply Tracked Change in Y.XmlFragment (word-level diff, per-hunk IDs) ────
@@ -174,44 +226,53 @@ function applyRevision(xmlFragment, ping, revision) {
     return
   }
 
+  // Trimmed fallback: selectedText may include trailing newlines if the selection
+  // extended to a paragraph boundary (textBetween adds '\n' as block separator).
+  const trimmedTarget = target.replace(/\n+$/, '')
+  if (trimmedTarget !== target && findAndApply(xmlFragment, trimmedTarget, revision)) {
+    console.log(`[ping] ✎ tracked (trimmed): "${trimmedTarget.slice(0, 40)}" → "${revision.slice(0, 40)}"`)
+    return
+  }
+
   // Multi-paragraph: selectedText contains '\n' separating individual paragraphs.
   // Find each paragraph in its own XmlText node. Insert the full revision in the
   // first matching node, mark all matched paragraphs as deleted.
   if (target.includes('\n')) {
     const paragraphs = target.split('\n').filter(p => p.trim().length > 0)
-    const hunkId = 'h0'
-    let firstDone = false
-    let applied = 0
+    if (paragraphs.length >= 2) {
+      const hunkId = 'h0'
+      let firstDone = false
+      let applied = 0
 
-    function markParagraph(el, para) {
-      if (el instanceof Y.XmlText) {
-        const content = el.toString()
-        const idx = content.indexOf(para)
-        if (idx !== -1) {
-          if (!firstDone) {
-            // Insert full revision before original text; shift original right
-            el.insert(idx, revision, { trackedInsert: { hunkId } })
-            el.format(idx + revision.length, para.length, { trackedDelete: { hunkId } })
-            firstDone = true
-          } else {
-            el.format(idx, para.length, { trackedDelete: { hunkId } })
+      function markParagraph(el, para) {
+        if (el instanceof Y.XmlText) {
+          const content = el.toString()
+          const idx = content.indexOf(para)
+          if (idx !== -1) {
+            if (!firstDone) {
+              el.insert(idx, revision, { trackedInsert: { hunkId } })
+              el.format(idx + revision.length, para.length, { trackedDelete: { hunkId } })
+              firstDone = true
+            } else {
+              el.format(idx, para.length, { trackedDelete: { hunkId } })
+            }
+            applied++
+            return true
           }
-          applied++
-          return true
+        } else if (el && typeof el.toArray === 'function') {
+          for (const child of el.toArray()) {
+            if (markParagraph(child, para)) return true
+          }
         }
-      } else if (el && typeof el.toArray === 'function') {
-        for (const child of el.toArray()) {
-          if (markParagraph(child, para)) return true
-        }
+        return false
       }
-      return false
-    }
 
-    for (const para of paragraphs) markParagraph(xmlFragment, para)
+      for (const para of paragraphs) markParagraph(xmlFragment, para)
 
-    if (applied > 0) {
-      console.log(`[ping] ✎ multi-para tracked: ${applied}/${paragraphs.length} paragraphs`)
-      return
+      if (applied > 0) {
+        console.log(`[ping] ✎ multi-para tracked: ${applied}/${paragraphs.length} paragraphs`)
+        return
+      }
     }
   }
 
@@ -219,6 +280,27 @@ function applyRevision(xmlFragment, ping, revision) {
   if (ping.revision && findAndApply(xmlFragment, ping.revision, revision)) {
     console.log(`[ping] ✎ follow-up tracked: "${ping.revision.slice(0, 40)}" → "${revision.slice(0, 40)}"`)
     return
+  }
+
+  // Empty-paragraph fallback: tracked-change content was lost (e.g. due to a
+  // TipTap paragraph-split from a prior newline in revision text). Find the
+  // empty XmlText node where the original content was and re-insert it so we
+  // can apply the new tracked diff cleanly.
+  if (ping.messages?.length > 0) {
+    function findEmpty(el) {
+      if (el instanceof Y.XmlText && el.toDelta().length === 0) return el
+      if (el && typeof el.toArray === 'function') {
+        for (const c of el.toArray()) { const r = findEmpty(c); if (r) return r }
+      }
+      return null
+    }
+    const emptyText = findEmpty(xmlFragment)
+    if (emptyText) {
+      emptyText.insert(0, target)
+      applyDiffedRevision(emptyText, 0, target, revision)
+      console.log(`[ping] ✎ reconstructed tracked changes in empty paragraph`)
+      return
+    }
   }
 
   console.warn(`[ping] ⚠ text not found in doc: "${target.slice(0, 60)}"`)

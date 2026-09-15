@@ -393,6 +393,12 @@ body {
   color: #5A7A5A;
 }
 
+.inline-chat-turn-count {
+  font-size: 0.7rem;
+  color: #555;
+  font-style: italic;
+}
+
 .inline-chat-messages { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
 
 .chat-msg {
