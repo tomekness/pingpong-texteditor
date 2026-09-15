@@ -287,12 +287,12 @@ body {
   cursor: pointer;
   padding: 0;
   font-family: var(--font-ui);
-  transition: background 0.1s;
+  transition: background 0.1s, transform 0.1s, color 0.1s;
 }
 .hunk-accept { background: #2A4A2A; color: #8BAF8B; }
 .hunk-reject { background: #3A2020; color: #C47B7B; }
-.hunk-accept:hover { background: #3A5A3A; }
-.hunk-reject:hover { background: #4A2828; }
+.hunk-accept:hover { background: #4A8A4A; color: #C8F0C8; transform: scale(1.15); }
+.hunk-reject:hover { background: #7A3030; color: #F0C0C0; transform: scale(1.15); }
 
 /* Active ping highlight */
 .ping-highlight {

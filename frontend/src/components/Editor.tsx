@@ -61,6 +61,7 @@ export default function Editor({ docId }: { docId: string }) {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const timerMsgRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const mountsRef = useRef<Map<string, HTMLDivElement>>(new Map())
+  const activeChatsRef = useRef<Array<[string, any]>>([])
   const snapshotRef = useRef<ArrayBuffer | null>(null)
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const inactivityFiredRef = useRef(false)
@@ -201,6 +202,15 @@ export default function Editor({ docId }: { docId: string }) {
   const activeChats = Object.entries(pings).filter(
     ([, ping]) => ping.status !== 'accepted' && ping.status !== 'rejected'
   )
+  activeChatsRef.current = activeChats
+
+  const refreshDecorations = useCallback((view: any) => {
+    const chats = activeChatsRef.current
+    const mounts = chats
+      .map(([pingId, ping]) => ({ pingId, pos: ping.to ?? 0, el: mountsRef.current.get(pingId) }))
+      .filter((m): m is { pingId: string; pos: number; el: HTMLDivElement } => !!m.el)
+    updateInlineChatDecorations(view, mounts)
+  }, [])
 
   useEffect(() => {
     if (!editor) return
@@ -213,13 +223,15 @@ export default function Editor({ docId }: { docId: string }) {
         mountsRef.current.set(pingId, document.createElement('div'))
       }
     }
-    const mounts = activeChats.map(([pingId, ping]) => ({
-      pingId,
-      pos: ping.to ?? 0,
-      el: mountsRef.current.get(pingId)!,
-    }))
-    updateInlineChatDecorations(editor.view, mounts)
-  }, [editor, pings])
+    refreshDecorations(editor.view)
+  }, [editor, pings, refreshDecorations])
+
+  useEffect(() => {
+    if (!editor) return
+    const handleUpdate = ({ editor: e }: any) => refreshDecorations(e.view)
+    editor.on('update', handleUpdate)
+    return () => { editor.off('update', handleUpdate) }
+  }, [editor, refreshDecorations])
 
   useEffect(() => {
     if (!editor) return
