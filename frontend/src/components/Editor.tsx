@@ -191,7 +191,9 @@ export default function Editor({ docId }: { docId: string }) {
         provider,
         user: getSessionUser(),
       }),
-      Placeholder.configure({ placeholder: 'Start writing…' }),
+      Placeholder.configure({
+        placeholder: ({ editor: e }) => e.state.doc.childCount === 1 ? 'Start writing…' : '',
+      }),
       Typography,
       TrackedDelete,
       TrackedInsert,

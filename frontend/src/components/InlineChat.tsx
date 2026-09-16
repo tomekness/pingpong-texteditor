@@ -14,10 +14,12 @@ interface InlineChatProps {
 
 export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProps) {
   const [input, setInput] = useState('')
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+    }
   }, [ping.messages?.length, ping.status])
 
   const sendMessage = () => {
@@ -60,7 +62,7 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
         <span className="inline-chat-phase">{ping.status === 'answered' ? 'Revision ready' : ping.status === 'error' ? 'Error' : 'In progress'}</span>
         <span className="inline-chat-turn-count">{messages.length > 0 ? `${Math.ceil(messages.length / 2)} turn${Math.ceil(messages.length / 2) !== 1 ? 's' : ''}` : ''}</span>
       </div>
-      <div className="inline-chat-messages">
+      <div className="inline-chat-messages" ref={messagesContainerRef}>
         <div className="chat-msg system">
           <span className="chat-label">Ping</span>
           <span>{ping.instruction}</span>
@@ -83,7 +85,6 @@ export default function InlineChat({ pingId, ping, docId, ydoc }: InlineChatProp
             <span>{ping.error || 'Something went wrong.'}</span>
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
       {ping.status === 'answered' && (
         <div className="inline-chat-actions">

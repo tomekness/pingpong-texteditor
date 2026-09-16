@@ -249,8 +249,8 @@ body {
 .editor-content blockquote { border-left: 3px solid var(--border); padding-left: 16px; color: var(--text-muted); margin-bottom: 1em; }
 .editor-content s { color: var(--text-muted); }
 
-/* Placeholder */
-.editor-content p.is-empty::before {
+/* Placeholder — only on first paragraph when entire editor is empty */
+.editor-content p.is-editor-empty::before {
   content: attr(data-placeholder);
   color: var(--text-light);
   pointer-events: none;
@@ -399,7 +399,7 @@ body {
   font-style: italic;
 }
 
-.inline-chat-messages { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.inline-chat-messages { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; max-height: 300px; overflow-y: auto; }
 
 .chat-msg {
   display: flex;
@@ -1118,10 +1118,18 @@ body {
 }
 
 /* ─── Print / PDF export ────────────────────────────── */
+@page { margin: 1.5cm; }
+
 @media print {
-  .topbar, .toolbar, .ping-bubble,
-  .overlay-backdrop, [data-tippy-root] { display: none !important; }
+  .topbar, .toolbar, .ping-bubble, .inline-chat,
+  .overlay-backdrop, [data-tippy-root],
+  .hunk-actions { display: none !important; }
+
+  .ping-highlight { background: none !important; outline: none !important; }
+  .tracked-del { display: none !important; }
+  .tracked-add { background: none !important; color: inherit !important; }
+
   body { background: #fff; }
-  .editor-wrap { padding: 0 !important; }
+  .editor-wrapper { padding: 1cm 0 0 !important; }
   .tiptap { box-shadow: none !important; padding: 0 !important; }
 }
