@@ -37,7 +37,7 @@ export function updateInlineChatDecorations(
       const safePos = Math.max(0, Math.min(pos, doc.content.size - 1))
       const $pos = doc.resolve(safePos)
       const afterBlock = $pos.after(1)
-      return [Decoration.widget(afterBlock, el, { key: pingId, side: 1 })]
+      return [Decoration.widget(afterBlock, el, { key: pingId, side: 1, stopEvent: () => true })]
     } catch {
       return []
     }
