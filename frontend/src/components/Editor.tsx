@@ -116,6 +116,44 @@ export default function Editor({ docId }: { docId: string }) {
     }
   }, [docId, ydoc, provider])
 
+  // Save snapshot to localStorage when tab hides or page unloads (laptop close, tab close)
+  useEffect(() => {
+    const sessionKey = `pingpong-session-${docId}`
+    const saveSnapshot = () => {
+      if (inactivityFiredRef.current) return
+      const arr = Y.encodeStateAsUpdate(ydoc)
+      let binary = ''
+      for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i])
+      try { localStorage.setItem(sessionKey, JSON.stringify({ ts: Date.now(), data: btoa(binary) })) } catch {}
+    }
+    const handleVisibility = () => { if (document.hidden) saveSnapshot() }
+    window.addEventListener('pagehide', saveSnapshot)
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      window.removeEventListener('pagehide', saveSnapshot)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [docId, ydoc])
+
+  // On mount: if localStorage snapshot is older than INACTIVITY_MS, session expired while away
+  useEffect(() => {
+    const sessionKey = `pingpong-session-${docId}`
+    const saved = localStorage.getItem(sessionKey)
+    if (!saved) return
+    try {
+      const { ts, data } = JSON.parse(saved)
+      if (Date.now() - ts < INACTIVITY_MS) return
+      const binary = atob(data)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      snapshotRef.current = bytes.buffer as ArrayBuffer
+      inactivityFiredRef.current = true
+      provider.disconnect()
+      setShowInactivity(true)
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // run once on mount
+
   // Sync title from/to Yjs meta map
   useEffect(() => {
     const metaMap = ydoc.getMap('meta')
@@ -175,7 +213,15 @@ export default function Editor({ docId }: { docId: string }) {
     const handleStateless = ({ payload }: { payload: string }) => {
       try {
         const msg = JSON.parse(payload)
-        if (msg.type === 'document-deleted') window.location.href = '/'
+        if (msg.type === 'document-deleted') {
+          if (!inactivityFiredRef.current) {
+            inactivityFiredRef.current = true
+            const arr = Y.encodeStateAsUpdate(ydoc)
+            snapshotRef.current = arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength) as ArrayBuffer
+            provider.disconnect()
+          }
+          setShowInactivity(true)
+        }
       } catch {}
     }
     provider.on('stateless', handleStateless)
@@ -350,6 +396,7 @@ export default function Editor({ docId }: { docId: string }) {
   }, [docId])
 
   const handleRestore = useCallback(async () => {
+    localStorage.removeItem(`pingpong-session-${docId}`)
     if (snapshotRef.current) {
       try {
         await fetch(`/api/docs/${encodeURIComponent(docId)}`, {
@@ -491,7 +538,7 @@ export default function Editor({ docId }: { docId: string }) {
       {showInactivity && (
         <InactivityOverlay
           onRestore={handleRestore}
-          onFresh={() => { window.location.href = '/' }}
+          onFresh={() => { localStorage.removeItem(`pingpong-session-${docId}`); window.location.href = '/' }}
         />
       )}
       {showSave && (

@@ -154,6 +154,37 @@ async function initMetaTable() {
 }
 initMetaTable()
 
+// ── Server-side expiry cleanup ────────────────────────────────────────────────
+// Client-side inactivity timer only fires while the tab is open. This loop
+// ensures docs are deleted even when all browsers have closed.
+
+async function cleanupExpiredDocs() {
+  const db = openDb()
+  try {
+    const expired = await dbAll(db,
+      `SELECT name FROM document_meta WHERE updated_at < datetime('now', '-1 hour')`
+    )
+    for (const { name } of expired) {
+      deletedDocs.add(name)
+      const doc = server.documents?.get(name)
+      if (doc) {
+        try { doc.broadcastStateless(JSON.stringify({ type: 'document-deleted' })) } catch {}
+      }
+      await dbRun(db, 'DELETE FROM documents WHERE name = ?', [name])
+      await dbRun(db, 'DELETE FROM document_meta WHERE name = ?', [name])
+      server.closeConnections(name)
+      setTimeout(() => deletedDocs.delete(name), 30_000)
+      console.log(`[cleanup] deleted expired doc "${name}"`)
+    }
+  } catch (err) {
+    console.error('[cleanup] error:', err.message)
+  } finally {
+    db.close()
+  }
+}
+
+setInterval(cleanupExpiredDocs, 5 * 60 * 1000)
+
 createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, DELETE, OPTIONS')
