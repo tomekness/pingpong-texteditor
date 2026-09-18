@@ -1117,6 +1117,71 @@ body {
   font-size: 0.85rem;
 }
 
+/* ─── Mobile / Responsive ──────────────────────────── */
+@media (max-width: 600px) {
+  /* Topbar: hide low-priority elements to prevent overflow */
+  .topbar { gap: 8px; padding: 0 10px; }
+  .topbar-new-btn { display: none; }
+  .save-indicator { display: none; }
+  .topbar-meta { font-size: 0.78rem; gap: 6px; }
+  .topbar-actions { gap: 2px; }
+  .topbar-icon-btn { width: 30px; height: 30px; font-size: 0.9rem; }
+
+  /* Editor: tighter padding */
+  .editor-wrapper {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* Title: smaller on mobile */
+  .doc-title-input { font-size: 1.5rem; margin-bottom: 16px; }
+
+  /* Editor text: slightly smaller for readability */
+  .editor-content { font-size: 1rem; }
+
+  /* Inline chat: compensate for reduced editor padding */
+  .inline-chat {
+    margin-left: 0;
+    margin-right: -16px;
+    border-radius: 0 0 5px 5px;
+  }
+
+  /* Toolbar: cap width so it never clips viewport */
+  .toolbar {
+    max-width: calc(100vw - 24px);
+    bottom: 12px;
+    padding: 5px 6px;
+    gap: 1px;
+    overflow-x: auto;
+  }
+  .toolbar-btn { padding: 5px 7px; min-width: 24px; }
+
+  /* Ping bubble: constrain to viewport on mobile */
+  .ping-bubble--active {
+    min-width: 180px;
+    max-width: calc(100vw - 32px);
+  }
+
+  /* Overlays: reduce padding */
+  .overlay-backdrop { padding: 12px; }
+  .overlay-card { padding: 28px 22px; }
+  .overlay-card--sm { padding: 24px 20px; }
+  .overlay-title { font-size: 1.3rem; }
+  .overlay-footer-btns { flex-direction: column; }
+  .overlay-footer-btns button { width: 100%; text-align: center; }
+
+  /* Welcome overlay demo panel: hide on very small screens */
+  .overlay-demo { display: none; }
+  .overlay-note { margin-bottom: 24px; }
+
+  /* Admin: tighter content padding */
+  .admin-content { padding: 24px 16px 60px; }
+  .admin-topbar { padding: 0 16px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .stat-card { padding: 14px; }
+  .stat-value { font-size: 1.5rem; }
+}
+
 /* ─── Print / PDF export ────────────────────────────── */
 @page { margin: 1.5cm; }
 

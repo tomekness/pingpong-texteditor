@@ -55,6 +55,8 @@ export default function Editor({ docId }: { docId: string }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showNewConfirm, setShowNewConfirm] = useState(false)
   const [showInactivity, setShowInactivity] = useState(false)
+  const [restoreError, setRestoreError] = useState(false)
+  const [restoring, setRestoring] = useState(false)
 
   const [timerMsg, setTimerMsg] = useState(false)
 
@@ -81,8 +83,20 @@ export default function Editor({ docId }: { docId: string }) {
   }), [docId, ydoc])
 
   useEffect(() => {
-    if (!sessionStorage.getItem(`welcomed-${docId}`)) setShowWelcome(true)
-  }, [docId])
+    if (sessionStorage.getItem(`welcomed-${docId}`)) return
+    // Show welcome only if the document is empty after initial sync.
+    // Suppresses the overlay when opening a second tab on a doc that already has content.
+    const show = () => {
+      const fragment = ydoc.getXmlFragment('default')
+      const isEmpty = fragment.length === 0 ||
+        (fragment.length === 1 && (fragment.get(0) as Y.XmlElement).length === 0)
+      if (isEmpty) setShowWelcome(true)
+    }
+    // If provider already synced before this effect ran, check immediately
+    if (provider.isSynced) { show(); return }
+    provider.on('synced', show)
+    return () => { provider.off('synced', show) }
+  }, [docId, provider, ydoc])
 
   // Inactivity timer — deletes doc from server after 1 hour of no user interaction
   useEffect(() => {
@@ -91,6 +105,11 @@ export default function Editor({ docId }: { docId: string }) {
       inactivityFiredRef.current = true
       const arr = Y.encodeStateAsUpdate(ydoc)
       snapshotRef.current = arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength) as ArrayBuffer
+      // Persist snapshot so the overlay survives a tab reload after laptop wake
+      const sessionKey = `pingpong-session-${docId}`
+      let binary = ''
+      for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i])
+      try { localStorage.setItem(sessionKey, JSON.stringify({ ts: 0, data: btoa(binary), needsRestore: true })) } catch {}
       provider.disconnect()
       try {
         await fetch(`/api/docs/${encodeURIComponent(docId)}`, { method: 'DELETE' })
@@ -141,8 +160,8 @@ export default function Editor({ docId }: { docId: string }) {
     const saved = localStorage.getItem(sessionKey)
     if (!saved) return
     try {
-      const { ts, data } = JSON.parse(saved)
-      if (Date.now() - ts < INACTIVITY_MS) return
+      const { ts, data, needsRestore } = JSON.parse(saved)
+      if (!needsRestore && Date.now() - ts < INACTIVITY_MS) return
       const binary = atob(data)
       const bytes = new Uint8Array(binary.length)
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
@@ -396,16 +415,28 @@ export default function Editor({ docId }: { docId: string }) {
   }, [docId])
 
   const handleRestore = useCallback(async () => {
-    localStorage.removeItem(`pingpong-session-${docId}`)
+    setRestoring(true)
+    setRestoreError(false)
     if (snapshotRef.current) {
-      try {
-        await fetch(`/api/docs/${encodeURIComponent(docId)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/octet-stream' },
-          body: snapshotRef.current,
-        })
-      } catch {}
+      let ok = false
+      for (let attempt = 0; attempt < 3 && !ok; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 1500))
+        try {
+          const res = await fetch(`/api/docs/${encodeURIComponent(docId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/octet-stream' },
+            body: snapshotRef.current,
+          })
+          if (res.ok) ok = true
+        } catch {}
+      }
+      if (!ok) {
+        setRestoring(false)
+        setRestoreError(true)
+        return
+      }
     }
+    localStorage.removeItem(`pingpong-session-${docId}`)
     window.location.reload()
   }, [docId])
 
@@ -539,6 +570,8 @@ export default function Editor({ docId }: { docId: string }) {
         <InactivityOverlay
           onRestore={handleRestore}
           onFresh={() => { localStorage.removeItem(`pingpong-session-${docId}`); window.location.href = '/' }}
+          restoring={restoring}
+          restoreError={restoreError}
         />
       )}
       {showSave && (
