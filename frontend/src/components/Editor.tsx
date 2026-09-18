@@ -83,8 +83,20 @@ export default function Editor({ docId }: { docId: string }) {
   }), [docId, ydoc])
 
   useEffect(() => {
-    if (!sessionStorage.getItem(`welcomed-${docId}`)) setShowWelcome(true)
-  }, [docId])
+    if (sessionStorage.getItem(`welcomed-${docId}`)) return
+    // Show welcome only if the document is empty after initial sync.
+    // Suppresses the overlay when opening a second tab on a doc that already has content.
+    const show = () => {
+      const fragment = ydoc.getXmlFragment('default')
+      const isEmpty = fragment.length === 0 ||
+        (fragment.length === 1 && (fragment.get(0) as Y.XmlElement).length === 0)
+      if (isEmpty) setShowWelcome(true)
+    }
+    // If provider already synced before this effect ran, check immediately
+    if (provider.isSynced) { show(); return }
+    provider.on('synced', show)
+    return () => { provider.off('synced', show) }
+  }, [docId, provider, ydoc])
 
   // Inactivity timer — deletes doc from server after 1 hour of no user interaction
   useEffect(() => {

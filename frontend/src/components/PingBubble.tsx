@@ -20,6 +20,7 @@ export default function PingBubble({ editor, docId, ydoc, setPreviewRange }: Pin
   const [instruction, setInstruction] = useState('')
   const [sending, setSending] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const pendingFocusRef = useRef(false)
 
   useEffect(() => {
     if (!editor) return
@@ -94,18 +95,33 @@ export default function PingBubble({ editor, docId, ydoc, setPreviewRange }: Pin
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab' && bubble) {
         e.preventDefault()
+        pendingFocusRef.current = true  // guard blur before setTimeout focus fires
         setActive(true)
         const { from, to } = editor.state.selection
         if (from !== to) setPreviewRange({ from, to })
-        setTimeout(() => inputRef.current?.focus(), 0)
+        setTimeout(() => {
+          inputRef.current?.focus()
+          pendingFocusRef.current = false
+        }, 0)
       }
     }
 
+    // Hide bubble when editor loses focus, unless focus is moving to the ping input
+    const handleBlur = ({ event }: { event: FocusEvent }) => {
+      if (pendingFocusRef.current) return  // Tab just fired; input will receive focus momentarily
+      if (inputRef.current && event?.relatedTarget === inputRef.current) return
+      setBubble(null)
+      setActive(false)
+      setPreviewRange(null)
+    }
+
     editor.on('selectionUpdate', handleSelectionUpdate)
+    editor.on('blur', handleBlur)
     document.addEventListener('selectionchange', handleDocSelectionChange)
     editor.view.dom.addEventListener('keydown', handleKeyDown)
     return () => {
       editor.off('selectionUpdate', handleSelectionUpdate)
+      editor.off('blur', handleBlur)
       document.removeEventListener('selectionchange', handleDocSelectionChange)
       editor.view.dom.removeEventListener('keydown', handleKeyDown)
     }
@@ -184,6 +200,11 @@ export default function PingBubble({ editor, docId, ydoc, setPreviewRange }: Pin
             onKeyDown={(e) => {
               if (e.key === 'Enter') sendPing()
               if (e.key === 'Escape') { setActive(false); setInstruction(''); setPreviewRange(null) }
+            }}
+            onBlur={(e) => {
+              const bubbleEl = e.currentTarget.closest('.ping-bubble')
+              if (bubbleEl?.contains(e.relatedTarget as Node)) return
+              setBubble(null); setActive(false); setPreviewRange(null)
             }}
             disabled={sending}
           />
