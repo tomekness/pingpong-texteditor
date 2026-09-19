@@ -200,8 +200,42 @@ function revertTrackedChanges(xmlFragment) {
   processNode(xmlFragment)
 }
 
+// ── Accept all tracked changes in a Y.XmlFragment (bridge-side) ─────────────
+function acceptTrackedChanges(xmlFragment) {
+  function processNode(el) {
+    if (el instanceof Y.XmlText) {
+      const delta = el.toDelta()
+      const ops = []
+      let pos = 0
+      for (const op of delta) {
+        const len = (op.insert || '').length
+        if (op.attributes?.trackedDelete) {
+          ops.push({ pos, len, type: 'delete' })
+        } else if (op.attributes?.trackedInsert) {
+          ops.push({ pos, len, type: 'clean' })
+        }
+        pos += len
+      }
+      ops.sort((a, b) => b.pos - a.pos)
+      for (const op of ops) {
+        if (op.type === 'delete') {
+          el.delete(op.pos, op.len)
+        } else {
+          el.format(op.pos, op.len, { trackedInsert: null })
+        }
+      }
+    } else if (el && typeof el.toArray === 'function') {
+      for (const child of el.toArray()) processNode(child)
+    }
+  }
+  processNode(xmlFragment)
+}
+
 // ── Apply Tracked Change in Y.XmlFragment (word-level diff, per-hunk IDs) ────
 function applyRevision(xmlFragment, ping, revision) {
+  // Accept any open tracked changes so offsets are clean before applying the new diff.
+  acceptTrackedChanges(xmlFragment)
+
   const target = ping.selectedText
 
   function findAndApply(el, text, rev) {

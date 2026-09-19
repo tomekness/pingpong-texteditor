@@ -340,6 +340,13 @@ body {
   white-space: nowrap;
 }
 
+.ping-bubble-blocked {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  color: #C47B7B;
+  white-space: nowrap;
+}
+
 .ping-bubble-label {
   font-family: var(--font-ui);
   font-size: 0.8rem;

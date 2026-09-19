@@ -71,6 +71,7 @@ export default function Editor({ docId }: { docId: string }) {
   const [showSave, setShowSave] = useState(false)
   const [showCopyLink, setShowCopyLink] = useState(false)
   const [previewRange, setPreviewRange] = useState<{ from: number; to: number } | null>(null)
+  const [hasOpenHunks, setHasOpenHunks] = useState(false)
 
   const ydoc = useMemo(() => new Y.Doc(), [])
   const provider = useMemo(() => new HocuspocusProvider({
@@ -303,8 +304,21 @@ export default function Editor({ docId }: { docId: string }) {
 
   useEffect(() => {
     if (!editor) return
-    const handleUpdate = ({ editor: e }: any) => refreshDecorations(e.view)
+    const checkHunks = (e: any) => {
+      const { doc, schema } = e.state
+      const delType = schema.marks.trackedDelete
+      const insType = schema.marks.trackedInsert
+      let found = false
+      doc.descendants((node: any) => {
+        if (found) return false
+        if (node.isText && node.marks.some((m: any) => m.type === delType || m.type === insType)) found = true
+        return !found
+      })
+      setHasOpenHunks(found)
+    }
+    const handleUpdate = ({ editor: e }: any) => { refreshDecorations(e.view); checkHunks(e) }
     editor.on('update', handleUpdate)
+    checkHunks(editor)
     return () => { editor.off('update', handleUpdate) }
   }, [editor, refreshDecorations])
 
@@ -528,7 +542,7 @@ export default function Editor({ docId }: { docId: string }) {
           spellCheck={false}
         />
         <div className="editor-area">
-          <PingBubble editor={editor} docId={docId} ydoc={ydoc} setPreviewRange={setPreviewRange} />
+          <PingBubble editor={editor} docId={docId} ydoc={ydoc} setPreviewRange={setPreviewRange} hasOpenHunks={hasOpenHunks} />
           <EditorContent editor={editor} />
         </div>
       </div>

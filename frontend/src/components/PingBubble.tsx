@@ -12,9 +12,10 @@ interface PingBubbleProps {
   docId: string
   ydoc: Y.Doc
   setPreviewRange: (range: { from: number; to: number } | null) => void
+  hasOpenHunks?: boolean
 }
 
-export default function PingBubble({ editor, docId, ydoc, setPreviewRange }: PingBubbleProps) {
+export default function PingBubble({ editor, docId, ydoc, setPreviewRange, hasOpenHunks = false }: PingBubbleProps) {
   const [bubble, setBubble] = useState<{ top: number; left: number } | null>(null)
   const [active, setActive] = useState(false)
   const [instruction, setInstruction] = useState('')
@@ -149,7 +150,7 @@ export default function PingBubble({ editor, docId, ydoc, setPreviewRange }: Pin
   }
 
   const sendPing = async () => {
-    if (!editor || !instruction.trim()) return
+    if (!editor || !instruction.trim() || hasOpenHunks) return
     setSending(true)
 
     const { from, to } = editor.state.selection
@@ -190,30 +191,34 @@ export default function PingBubble({ editor, docId, ydoc, setPreviewRange }: Pin
     >
       <div className="ping-bubble-label">🏓</div>
       {active ? (
-        <>
-          <input
-            ref={inputRef}
-            className="ping-bubble-input"
-            placeholder="Instruction for Opponent…"
-            value={instruction}
-            onChange={(e) => setInstruction(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') sendPing()
-              if (e.key === 'Escape') { setActive(false); setInstruction(''); setPreviewRange(null) }
-            }}
-            onBlur={(e) => {
-              const bubbleEl = e.currentTarget.closest('.ping-bubble')
-              if (bubbleEl?.contains(e.relatedTarget as Node)) return
-              setBubble(null); setActive(false); setPreviewRange(null)
-            }}
-            disabled={sending}
-          />
-          {instruction && (
-            <button className="ping-send-btn" onClick={sendPing} disabled={sending} title="Send ping (Enter)">
-              {sending ? '…' : '→'}
-            </button>
-          )}
-        </>
+        hasOpenHunks ? (
+          <span className="ping-bubble-blocked">Accept or reject changes first</span>
+        ) : (
+          <>
+            <input
+              ref={inputRef}
+              className="ping-bubble-input"
+              placeholder="Instruction for Opponent…"
+              value={instruction}
+              onChange={(e) => setInstruction(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') sendPing()
+                if (e.key === 'Escape') { setActive(false); setInstruction(''); setPreviewRange(null) }
+              }}
+              onBlur={(e) => {
+                const bubbleEl = e.currentTarget.closest('.ping-bubble')
+                if (bubbleEl?.contains(e.relatedTarget as Node)) return
+                setBubble(null); setActive(false); setPreviewRange(null)
+              }}
+              disabled={sending}
+            />
+            {instruction && (
+              <button className="ping-send-btn" onClick={sendPing} disabled={sending} title="Send ping (Enter)">
+                {sending ? '…' : '→'}
+              </button>
+            )}
+          </>
+        )
       ) : (
         <span className="ping-bubble-hint">Tab or hover</span>
       )}
