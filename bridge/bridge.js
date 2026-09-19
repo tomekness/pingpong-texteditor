@@ -111,9 +111,9 @@ async function callLLM(ping) {
   const raw = data.choices[0].message.content.trim()
 
   // Parse JSON response: {revision, explanation}
-  // Collapse any internal newlines in revision — Y.XmlText newlines cause TipTap
-  // to split the paragraph, corrupting the tracked-change structure.
-  const sanitize = (s) => s.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim()
+  // Normalize line endings; allow \n so y-prosemirror creates proper paragraph splits.
+  // Collapse runs of 3+ newlines to 2 to avoid excessive blank paragraphs.
+  const sanitize = (s) => s.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
   try {
     const parsed = JSON.parse(raw)
     if (parsed.revision && typeof parsed.revision === 'string') {

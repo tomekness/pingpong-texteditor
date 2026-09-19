@@ -183,18 +183,56 @@ function walkAndProcess(el: any, accept: boolean, hunkId?: string) {
   }
 }
 
+function cleanEmptyParagraphs(xmlFragment: Y.XmlFragment) {
+  const elements = xmlFragment.toArray()
+  const toRemove: number[] = []
+
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i]
+    if (!(el instanceof Y.XmlElement)) continue
+    let totalLen = 0
+    for (const child of el.toArray()) {
+      if (child instanceof XmlText) totalLen += child.length
+    }
+    if (totalLen === 0) toRemove.push(i)
+  }
+
+  // Always keep at least one paragraph so the editor stays functional
+  if (toRemove.length >= elements.length && toRemove.length > 0) toRemove.pop()
+
+  for (let i = toRemove.length - 1; i >= 0; i--) {
+    xmlFragment.delete(toRemove[i], 1)
+  }
+}
+
 export function commitRevision(ydoc: Y.Doc) {
-  walkAndProcess(ydoc.getXmlFragment('default'), true)
+  ydoc.transact(() => {
+    const frag = ydoc.getXmlFragment('default')
+    walkAndProcess(frag, true)
+    cleanEmptyParagraphs(frag)
+  })
 }
 
 export function revertRevision(ydoc: Y.Doc) {
-  walkAndProcess(ydoc.getXmlFragment('default'), false)
+  ydoc.transact(() => {
+    const frag = ydoc.getXmlFragment('default')
+    walkAndProcess(frag, false)
+    cleanEmptyParagraphs(frag)
+  })
 }
 
 export function commitHunk(ydoc: Y.Doc, hunkId: string) {
-  walkAndProcess(ydoc.getXmlFragment('default'), true, hunkId)
+  ydoc.transact(() => {
+    const frag = ydoc.getXmlFragment('default')
+    walkAndProcess(frag, true, hunkId)
+    cleanEmptyParagraphs(frag)
+  })
 }
 
 export function revertHunk(ydoc: Y.Doc, hunkId: string) {
-  walkAndProcess(ydoc.getXmlFragment('default'), false, hunkId)
+  ydoc.transact(() => {
+    const frag = ydoc.getXmlFragment('default')
+    walkAndProcess(frag, false, hunkId)
+    cleanEmptyParagraphs(frag)
+  })
 }
