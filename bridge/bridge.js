@@ -268,14 +268,24 @@ function applyRevision(xmlFragment, ping, revision) {
     return
   }
 
-  // Multi-paragraph: selectedText contains '\n' separating individual paragraphs.
-  // Find each paragraph in its own XmlText node. Insert the full revision in the
-  // first matching node, mark all matched paragraphs as deleted.
+  // Multi-paragraph: apply a per-paragraph word diff instead of dumping the
+  // entire revision into paragraph 1. Split both sides by \n and diff each pair.
   if (target.includes('\n')) {
-    const paragraphs = target.split('\n').filter(p => p.trim().length > 0)
-    if (paragraphs.length >= 2) {
-      const hunkId = 'h0'
-      let firstDone = false
+    const origParas = target.split('\n').filter(p => p.trim().length > 0)
+    if (origParas.length >= 2) {
+      const revParas = revision.split('\n').filter(p => p.trim().length > 0)
+
+      // If revision has more paragraphs than original, merge excess into the last
+      // revision paragraph so we never have more rev than orig entries to diff.
+      while (revParas.length > origParas.length) {
+        const extra = revParas.pop()
+        if (revParas.length === 0) { revParas.push(extra); break }
+        revParas[revParas.length - 1] = revParas[revParas.length - 1] + ' ' + extra
+      }
+
+      // Global hunk counter shared across all paragraphs so IDs don't collide.
+      let globalHunkCounter = 0
+      let pIdx = 0
       let applied = 0
 
       function markParagraph(el, para) {
@@ -283,13 +293,13 @@ function applyRevision(xmlFragment, ping, revision) {
           const content = el.toString()
           const idx = content.indexOf(para)
           if (idx !== -1) {
-            if (!firstDone) {
-              el.format(idx, para.length, { trackedDelete: { hunkId } })
-              el.insert(idx + para.length, revision, { trackedInsert: { hunkId } })
-              firstDone = true
+            if (pIdx < revParas.length) {
+              globalHunkCounter = applyDiffedRevision(el, idx, para, revParas[pIdx], globalHunkCounter)
             } else {
-              el.format(idx, para.length, { trackedDelete: { hunkId } })
+              // Excess original paragraph with no corresponding revision — delete it.
+              el.format(idx, para.length, { trackedDelete: { hunkId: `h${globalHunkCounter++}` } })
             }
+            pIdx++
             applied++
             return true
           }
@@ -301,10 +311,10 @@ function applyRevision(xmlFragment, ping, revision) {
         return false
       }
 
-      for (const para of paragraphs) markParagraph(xmlFragment, para)
+      for (const para of origParas) markParagraph(xmlFragment, para)
 
       if (applied > 0) {
-        console.log(`[ping] ✎ multi-para tracked: ${applied}/${paragraphs.length} paragraphs`)
+        console.log(`[ping] ✎ multi-para tracked: ${applied}/${origParas.length} para(s) ← ${revParas.length} rev para(s)`)
         return
       }
     }
@@ -340,12 +350,14 @@ function applyRevision(xmlFragment, ping, revision) {
   console.warn(`[ping] ⚠ text not found in doc: "${target.slice(0, 60)}"`)
 }
 
-function applyDiffedRevision(el, idx, oldText, newText) {
+// startCounter allows callers to share a global hunk counter across multiple
+// paragraphs so IDs don't collide. Returns the next available counter value.
+function applyDiffedRevision(el, idx, oldText, newText, startCounter = 0) {
   const ops = wordDiff(oldText, newText)
 
   // Group consecutive delete/insert ops into hunks
   const hunks = []
-  let hunkCounter = 0, oldPos = 0, opIdx = 0
+  let hunkCounter = startCounter, oldPos = 0, opIdx = 0
 
   while (opIdx < ops.length) {
     if (ops[opIdx].type === 'equal') {
@@ -371,4 +383,6 @@ function applyDiffedRevision(el, idx, oldText, newText) {
     if (insertText) el.insert(absPos + deleteLen, insertText, { trackedInsert: { hunkId } })
     if (deleteLen > 0) el.format(absPos, deleteLen, { trackedDelete: { hunkId } })
   }
+
+  return hunkCounter
 }
