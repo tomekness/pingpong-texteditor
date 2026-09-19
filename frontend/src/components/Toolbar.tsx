@@ -1,12 +1,15 @@
 'use client'
 
 import { Editor } from '@tiptap/react'
+import { useState } from 'react'
 
 interface ToolbarProps {
   editor: Editor | null
 }
 
 export default function Toolbar({ editor }: ToolbarProps) {
+  const [showMore, setShowMore] = useState(false)
+
   if (!editor) return null
 
   const btn = (active: boolean, onClick: () => void, label: string, tooltip: string) => (
@@ -17,6 +20,15 @@ export default function Toolbar({ editor }: ToolbarProps) {
     >
       {label}
     </button>
+  )
+
+  const secondaryButtons = (
+    <>
+      {btn(editor.isActive('blockquote'), () => editor.chain().focus().toggleBlockquote().run(), '"', 'Blockquote')}
+      <div className="toolbar-sep" />
+      {btn(false, () => editor.chain().focus().undo().run(), '↩', 'Undo')}
+      {btn(false, () => editor.chain().focus().redo().run(), '↪', 'Redo')}
+    </>
   )
 
   return (
@@ -30,10 +42,28 @@ export default function Toolbar({ editor }: ToolbarProps) {
       {btn(editor.isActive('heading', { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), 'H2', 'Heading 2')}
       {btn(editor.isActive('bulletList'),    () => editor.chain().focus().toggleBulletList().run(),    '•',  'Bullet list')}
       {btn(editor.isActive('orderedList'),   () => editor.chain().focus().toggleOrderedList().run(),   '1.', 'Numbered list')}
-      {btn(editor.isActive('blockquote'),    () => editor.chain().focus().toggleBlockquote().run(),    '"',  'Blockquote')}
-      <div className="toolbar-sep" />
-      {btn(false, () => editor.chain().focus().undo().run(), '↩', 'Undo')}
-      {btn(false, () => editor.chain().focus().redo().run(), '↪', 'Redo')}
+
+      {/* Desktop: always show secondary buttons inline */}
+      <div className="toolbar-secondary toolbar-secondary--inline">
+        <div className="toolbar-sep" />
+        {secondaryButtons}
+      </div>
+
+      {/* Mobile: toggle via ··· button */}
+      <div className="toolbar-secondary toolbar-secondary--mobile">
+        <button
+          className={`toolbar-btn toolbar-more-btn ${showMore ? 'toolbar-btn--active' : ''}`}
+          onMouseDown={(e) => { e.preventDefault(); setShowMore(v => !v) }}
+          title="More"
+        >
+          ···
+        </button>
+        {showMore && (
+          <div className="toolbar-more-panel">
+            {secondaryButtons}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -528,6 +528,28 @@ body {
 .toolbar-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
 .toolbar-btn--active { background: rgba(255,255,255,0.15); color: #fff; }
 
+/* Desktop: secondary buttons always inline; mobile variant hidden */
+.toolbar-secondary--inline { display: contents; }
+.toolbar-secondary--mobile { display: none; }
+
+.toolbar-more-panel {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: #1A1A1A;
+  border-radius: 4px;
+  padding: 5px 6px;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  white-space: nowrap;
+}
+
+.toolbar-secondary--mobile {
+  position: relative;
+}
+
 .toolbar-sep {
   width: 1px;
   height: 18px;
@@ -1163,9 +1185,13 @@ body {
     bottom: 12px;
     padding: 5px 6px;
     gap: 1px;
-    overflow-x: auto;
+    overflow: visible;
   }
   .toolbar-btn { padding: 5px 7px; min-width: 24px; }
+
+  /* Mobile: hide inline secondary, show ··· toggle instead */
+  .toolbar-secondary--inline { display: none; }
+  .toolbar-secondary--mobile { display: block; }
 
   /* Ping bubble: constrain to viewport on mobile */
   .ping-bubble--active {
