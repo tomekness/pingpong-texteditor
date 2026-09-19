@@ -114,6 +114,7 @@ export default function Editor({ docId }: { docId: string }) {
       try {
         await fetch(`/api/docs/${encodeURIComponent(docId)}`, { method: 'DELETE' })
       } catch {}
+      setShowSave(false); setShowCopyLink(false); setShowNewConfirm(false)
       setShowInactivity(true)
     }
 
@@ -168,6 +169,7 @@ export default function Editor({ docId }: { docId: string }) {
       snapshotRef.current = bytes.buffer as ArrayBuffer
       inactivityFiredRef.current = true
       provider.disconnect()
+      setShowSave(false); setShowCopyLink(false); setShowNewConfirm(false)
       setShowInactivity(true)
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -239,6 +241,7 @@ export default function Editor({ docId }: { docId: string }) {
             snapshotRef.current = arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength) as ArrayBuffer
             provider.disconnect()
           }
+          setShowSave(false); setShowCopyLink(false); setShowNewConfirm(false)
           setShowInactivity(true)
         }
       } catch {}

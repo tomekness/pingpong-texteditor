@@ -321,6 +321,10 @@ body {
 .ping-bubble--hint {
   min-width: auto;
   opacity: 0.55;
+  pointer-events: none;
+}
+.ping-bubble--hint > * {
+  pointer-events: auto;
 }
 .ping-bubble--hint:hover { opacity: 1; }
 
