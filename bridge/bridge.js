@@ -53,6 +53,16 @@ async function handlePing({ documentName, pingId, ping }) {
     provider.on('synced', () => { clearTimeout(t); resolve() })
   })
 
+  // Guard: verify live ping status is still 'pending' before processing.
+  // The server observer can dispatch stale notifications when the document
+  // is reloaded from SQLite while a previous bridge run is still in flight.
+  const livePing = ydoc.getMap('pings').get(pingId)
+  if (!livePing || livePing.status !== 'pending') {
+    console.log(`[ping] "${pingId}" status=${livePing?.status ?? 'gone'} — skipping stale dispatch`)
+    setTimeout(() => provider.destroy(), 500)
+    return
+  }
+
   const pingMap = ydoc.getMap('pings')
   pingMap.set(pingId, { ...ping, status: 'working' })
 
