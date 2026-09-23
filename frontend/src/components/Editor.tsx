@@ -272,11 +272,8 @@ export default function Editor({ docId }: { docId: string }) {
     ],
     editorProps: {
       attributes: { class: 'editor-content' },
-      // ProseMirror default uses "\n\n" between blocks, which doubles blank
-      // lines when pasting (empty paragraph + separator = \n\n\n\n = 2 blanks).
-      // Use "\n" so the pasted plain text matches what the editor shows.
       clipboardTextSerializer: (slice) =>
-        slice.content.textBetween(0, slice.content.size, '\n', '\n'),
+        slice.content.textBetween(0, slice.content.size, '\n\n', '\n'),
     },
   })
 

@@ -236,7 +236,7 @@ body {
   color: var(--text);
 }
 
-.editor-content p { margin-bottom: 0; }
+.editor-content p { margin-bottom: 1em; }
 .editor-content h1 { font-size: 1.8rem; font-weight: 700; margin: 1.2em 0 0.4em; letter-spacing: -0.02em; }
 .editor-content h2 { font-size: 1.35rem; font-weight: 600; margin: 1em 0 0.4em; }
 .editor-content h3 { font-size: 1.1rem; font-weight: 600; margin: 0.8em 0 0.3em; }
