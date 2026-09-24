@@ -240,6 +240,11 @@ export default function Editor({ docId }: { docId: string }) {
             inactivityFiredRef.current = true
             const arr = Y.encodeStateAsUpdate(ydoc)
             snapshotRef.current = arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength) as ArrayBuffer
+            // Persist snapshot so restore survives a tab refresh before the user clicks the button
+            const sessionKey = `pingpong-session-${docId}`
+            let binary = ''
+            for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i])
+            try { localStorage.setItem(sessionKey, JSON.stringify({ ts: 0, data: btoa(binary), needsRestore: true })) } catch {}
             provider.disconnect()
           }
           setShowSave(false); setShowCopyLink(false); setShowNewConfirm(false)
@@ -249,7 +254,7 @@ export default function Editor({ docId }: { docId: string }) {
     }
     provider.on('stateless', handleStateless)
     return () => { provider.off('stateless', handleStateless) }
-  }, [provider])
+  }, [provider, docId, ydoc])
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -353,22 +358,6 @@ export default function Editor({ docId }: { docId: string }) {
     resetTimerRef.current?.()
     showTimerReset()
   }, [showTimerReset])
-
-  const handleRefreshTimer = useCallback(async () => {
-    inactivityFiredRef.current = false
-    setShowInactivity(false)
-    showTimerReset()
-    const arr = Y.encodeStateAsUpdate(ydoc)
-    const buf = arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength) as ArrayBuffer
-    try {
-      await fetch(`/api/docs/${encodeURIComponent(docId)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/octet-stream' },
-        body: buf,
-      })
-    } catch {}
-    resetTimerRef.current?.()
-  }, [docId, ydoc, showTimerReset])
 
   const handleDownload = useCallback(async (format: 'txt' | 'md' | 'docx' | 'pdf') => {
     if (!editor) return

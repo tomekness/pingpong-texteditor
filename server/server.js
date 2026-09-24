@@ -23,6 +23,10 @@ const server = new Hocuspocus({
 
   async onConnect({ documentName }) {
     console.log(`[connect] doc="${documentName}"`)
+    // If a client reconnects to a previously-expired doc (e.g. laptop came back online
+    // while server already cleaned it up), allow persistence again so CRDT-merged
+    // content gets saved to SQLite rather than being lost after 30 s.
+    deletedDocs.delete(documentName)
   },
 
   async onDisconnect({ documentName }) {
