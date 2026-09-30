@@ -72,6 +72,7 @@ export default function Editor({ docId }: { docId: string }) {
   const [showCopyLink, setShowCopyLink] = useState(false)
   const [previewRange, setPreviewRange] = useState<{ from: number; to: number } | null>(null)
   const [hasOpenHunks, setHasOpenHunks] = useState(false)
+  const [selectionStats, setSelectionStats] = useState<{ words: number; chars: number } | null>(null)
 
   const ydoc = useMemo(() => new Y.Doc(), [])
   const provider = useMemo(() => new HocuspocusProvider({
@@ -279,6 +280,14 @@ export default function Editor({ docId }: { docId: string }) {
       attributes: { class: 'editor-content' },
       clipboardTextSerializer: (slice) =>
         slice.content.textBetween(0, slice.content.size, '\n\n', '\n'),
+    },
+    onSelectionUpdate: ({ editor: e }) => {
+      const { from, to } = e.state.selection
+      if (from === to) { setSelectionStats(null); return }
+      const text = e.state.doc.textBetween(from, to, ' ')
+      const chars = text.length
+      const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length
+      setSelectionStats({ words, chars })
     },
   })
 
@@ -539,6 +548,12 @@ export default function Editor({ docId }: { docId: string }) {
       </div>
 
       <Toolbar editor={editor} />
+
+      {selectionStats && (
+        <div className="selection-stats">
+          {selectionStats.words} words · {selectionStats.chars} chars
+        </div>
+      )}
 
       {activeChats.map(([pingId, ping]) => {
         const el = mountsRef.current.get(pingId)
