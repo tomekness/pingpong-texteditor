@@ -27,6 +27,13 @@ const HOCUSPOCUS_URL =
 
 const INACTIVITY_MS = 60 * 60 * 1000
 
+const WindowsRedoExtension = Extension.create({
+  name: 'windowsRedo',
+  addKeyboardShortcuts() {
+    return { 'Mod-y': () => this.editor.commands.redo() }
+  },
+})
+
 const GUEST_ADJECTIVES = ['Swift', 'Quiet', 'Bold', 'Bright', 'Sharp', 'Calm', 'Quick', 'Keen']
 const GUEST_NOUNS = ['Panda', 'Fox', 'Owl', 'Wolf', 'Lynx', 'Bear', 'Hawk', 'Deer']
 const GUEST_COLORS = ['#3B6FD4', '#E74C3C', '#27AE60', '#8E44AD', '#E67E22', '#16A085', '#C0392B', '#2980B9']
@@ -276,7 +283,7 @@ export default function Editor({ docId }: { docId: string }) {
       TrackedChangesHunkButtons.configure({ ydoc }),
       InlineChatExtension,
       PingHighlightExtension,
-      Extension.create({ name: 'windowsRedo', addKeyboardShortcuts() { return { 'Mod-y': () => this.editor.commands.redo() } } }),
+      WindowsRedoExtension,
     ],
     editorProps: {
       attributes: { class: 'editor-content' },
