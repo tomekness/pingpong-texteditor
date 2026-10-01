@@ -151,6 +151,7 @@ async function initMetaTable() {
     metaTableReady = true
     db.close()
     console.log('[api] tables ready')
+    cleanupExpiredDocs()
   } catch (err) {
     console.warn('[api] table init deferred:', err.message)
     setTimeout(initMetaTable, 3000)
@@ -180,6 +181,7 @@ async function cleanupExpiredDocs() {
       setTimeout(() => deletedDocs.delete(name), 30_000)
       console.log(`[cleanup] deleted expired doc "${name}"`)
     }
+    await dbRun(db, `DELETE FROM ping_log WHERE created_at < datetime('now', '-7 days')`)
   } catch (err) {
     console.error('[cleanup] error:', err.message)
   } finally {
@@ -190,38 +192,11 @@ async function cleanupExpiredDocs() {
 setInterval(cleanupExpiredDocs, 5 * 60 * 1000)
 
 createServer(async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, DELETE, OPTIONS')
   res.setHeader('Content-Type', 'application/json')
 
   if (req.method === 'OPTIONS') { res.writeHead(204).end(); return }
 
   const url = new URL(req.url, 'http://x')
-
-  if (req.method === 'GET' && url.pathname === '/docs') {
-    const db = openDb()
-    try {
-      const rows = await dbAll(db, `
-        SELECT d.name, d.data, m.updated_at
-        FROM documents d
-        LEFT JOIN document_meta m ON d.name = m.name
-        ORDER BY COALESCE(m.updated_at, '') DESC, d.rowid DESC
-      `)
-      const docs = rows.map((row) => ({
-        id: row.name,
-        title: extractTitle(row.data, row.name),
-        updatedAt: row.updated_at ? row.updated_at + 'Z' : null,
-      }))
-      res.writeHead(200)
-      res.end(JSON.stringify(docs))
-    } catch (err) {
-      res.writeHead(500)
-      res.end(JSON.stringify({ error: err.message }))
-    } finally {
-      db.close()
-    }
-    return
-  }
 
   const match = url.pathname.match(/^\/docs\/(.+)$/)
 
@@ -260,8 +235,21 @@ createServer(async (req, res) => {
   if (req.method === 'POST' && match) {
     const name = decodeURIComponent(match[1])
     const chunks = []
-    req.on('data', chunk => chunks.push(chunk))
+    const MAX_BODY = 10 * 1024 * 1024
+    let totalBytes = 0
+    let tooLarge = false
+    req.on('data', chunk => {
+      totalBytes += chunk.length
+      if (totalBytes > MAX_BODY) {
+        tooLarge = true
+        res.writeHead(413).end(JSON.stringify({ error: 'Body too large' }))
+        req.destroy()
+        return
+      }
+      chunks.push(chunk)
+    })
     req.on('end', async () => {
+      if (tooLarge) return
       const data = Buffer.concat(chunks)
       if (!data.length) { res.writeHead(400).end(JSON.stringify({ error: 'Empty body' })); return }
       const db = openDb()
