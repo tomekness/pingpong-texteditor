@@ -1,6 +1,7 @@
 'use client'
 
 import { useEditor, EditorContent } from '@tiptap/react'
+import { Extension } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
@@ -275,6 +276,7 @@ export default function Editor({ docId }: { docId: string }) {
       TrackedChangesHunkButtons.configure({ ydoc }),
       InlineChatExtension,
       PingHighlightExtension,
+      Extension.create({ name: 'windowsRedo', addKeyboardShortcuts() { return { 'Mod-y': () => this.editor.commands.redo() } } }),
     ],
     editorProps: {
       attributes: { class: 'editor-content' },
