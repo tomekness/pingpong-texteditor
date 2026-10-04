@@ -97,6 +97,25 @@ body {
   background: rgba(0,0,0,0.06);
   color: var(--text);
 }
+.topbar-icon-btn--active {
+  background: rgba(0,0,0,0.08);
+  color: var(--text);
+}
+.topbar-icon-btn--md {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* ─── Markdown syntax reveal decorations ───────────────── */
+.md-syntax {
+  color: var(--text-muted, #999);
+  font-family: monospace;
+  font-size: 0.85em;
+  user-select: none;
+  pointer-events: none;
+  opacity: 0.7;
+}
 
 /* ─── Home ─────────────────────────────────────────── */
 .home {

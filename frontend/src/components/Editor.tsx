@@ -19,6 +19,7 @@ import DeleteConfirmOverlay from './DeleteConfirmOverlay'
 import InactivityOverlay from './InactivityOverlay'
 import { InlineChatExtension, updateInlineChatDecorations, PingHighlightExtension, updatePingHighlights } from '@/lib/inlineChatPlugin'
 import { TrackedDelete, TrackedInsert, TrackedChangesHunkButtons } from '@/lib/trackedChanges'
+import { MarkdownSyntaxReveal } from '@/lib/markdownSyntaxReveal'
 
 const HOCUSPOCUS_URL =
   typeof window !== 'undefined'
@@ -78,6 +79,7 @@ export default function Editor({ docId }: { docId: string }) {
   const resetTimerRef = useRef<(() => void) | null>(null)
   const [showSave, setShowSave] = useState(false)
   const [showCopyLink, setShowCopyLink] = useState(false)
+  const [markdownMode, setMarkdownMode] = useState(false)
   const [previewRange, setPreviewRange] = useState<{ from: number; to: number } | null>(null)
   const [hasOpenHunks, setHasOpenHunks] = useState(false)
   const [selectionStats, setSelectionStats] = useState<{ words: number; chars: number } | null>(null)
@@ -284,6 +286,7 @@ export default function Editor({ docId }: { docId: string }) {
       InlineChatExtension,
       PingHighlightExtension,
       WindowsRedoExtension,
+      MarkdownSyntaxReveal,
     ],
     editorProps: {
       attributes: { class: 'editor-content' },
@@ -400,6 +403,13 @@ export default function Editor({ docId }: { docId: string }) {
       window.print()
     }
   }, [editor, title])
+
+  const toggleMarkdownMode = useCallback(() => {
+    if (!editor) return
+    const next = !markdownMode
+    setMarkdownMode(next)
+    ;(editor.commands as any).setMarkdownMode(next)
+  }, [editor, markdownMode])
 
   const copyLink = useCallback(() => {
     setShowCopyLink(true)
@@ -524,6 +534,14 @@ export default function Editor({ docId }: { docId: string }) {
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
             </svg>
+          </button>
+          <button
+            className={`topbar-icon-btn topbar-icon-btn--md${markdownMode ? ' topbar-icon-btn--active' : ''}`}
+            onClick={toggleMarkdownMode}
+            title="Show Markdown syntax"
+            aria-label="Show Markdown syntax"
+          >
+            M↓
           </button>
           <button
             className="topbar-icon-btn topbar-icon-btn--delete"
