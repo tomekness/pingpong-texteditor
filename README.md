@@ -27,6 +27,25 @@ Open the app — you land instantly on a fresh document. No account, no login.
 - Content is automatically removed after **1 hour of inactivity**
 - The delete button (top right) removes it immediately
 
+## Editor features
+
+**Formatting** — Bold, italic, strikethrough, inline code, H1/H2, blockquote, bullet and numbered lists via the floating toolbar (appears on text selection).
+
+**Word & character count** — Select any text to see a word and character count appear in the bottom-right corner.
+
+**Markdown syntax reveal** — Click the **M↓** button in the top bar to show Markdown syntax markers (e.g. `**`, `#`) around the mark your cursor is in. Useful for checking formatting without switching to a raw Markdown view.
+
+**Keyboard shortcuts**
+
+| Action | Shortcut |
+|--------|---------|
+| Undo | Ctrl+Z / Cmd+Z |
+| Redo | Ctrl+Y or Ctrl+Shift+Z / Cmd+Shift+Z |
+| Bold | Ctrl+B / Cmd+B |
+| Italic | Ctrl+I / Cmd+I |
+
+**Mobile** — The formatting toolbar collapses less-common options (blockquote, undo/redo) behind a **···** overflow button on narrow screens.
+
 ## Stack
 
 | Layer | Technology |

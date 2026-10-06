@@ -10,3 +10,5 @@ build/
 _planning/
 _testing/
 .claude/
+frontend/CLAUDE.md
+frontend/tsconfig.tsbuildinfo
