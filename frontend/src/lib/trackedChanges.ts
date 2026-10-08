@@ -183,6 +183,14 @@ function walkAndProcess(el: any, accept: boolean, hunkId?: string) {
   }
 }
 
+function hasAnyText(el: any): boolean {
+  if (el instanceof XmlText) return el.length > 0
+  if (typeof el?.toArray === 'function') {
+    return el.toArray().some((child: any) => hasAnyText(child))
+  }
+  return false
+}
+
 function cleanEmptyParagraphs(xmlFragment: Y.XmlFragment) {
   const elements = xmlFragment.toArray()
   const toRemove: number[] = []
@@ -190,11 +198,7 @@ function cleanEmptyParagraphs(xmlFragment: Y.XmlFragment) {
   for (let i = 0; i < elements.length; i++) {
     const el = elements[i]
     if (!(el instanceof Y.XmlElement)) continue
-    let totalLen = 0
-    for (const child of el.toArray()) {
-      if (child instanceof XmlText) totalLen += child.length
-    }
-    if (totalLen === 0) toRemove.push(i)
+    if (!hasAnyText(el)) toRemove.push(i)
   }
 
   // Always keep at least one paragraph so the editor stays functional
