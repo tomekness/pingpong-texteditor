@@ -250,7 +250,7 @@ function applyRevision(xmlFragment, ping, revision) {
 
   function findAndApply(el, text, rev) {
     if (el instanceof Y.XmlText) {
-      const content = el.toString()
+      const content = el.toDelta().map(op => op.insert || '').join('')
       const idx = content.indexOf(text)
       if (idx !== -1) {
         applyDiffedRevision(el, idx, text, rev)
@@ -300,7 +300,7 @@ function applyRevision(xmlFragment, ping, revision) {
 
       function markParagraph(el, para) {
         if (el instanceof Y.XmlText) {
-          const content = el.toString()
+          const content = el.toDelta().map(op => op.insert || '').join('')
           const idx = content.indexOf(para)
           if (idx !== -1) {
             if (pIdx < revParas.length) {
