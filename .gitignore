@@ -9,6 +9,7 @@ build/
 *.log
 _planning/
 _testing/
+_dev/
 .claude/
 frontend/CLAUDE.md
 frontend/tsconfig.tsbuildinfo
