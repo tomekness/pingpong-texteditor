@@ -136,12 +136,27 @@ async function callLLM(ping) {
 }
 
 // ── Build LLM message list (supports follow-up conversation) ─────────────────
+function getSystemPrompt(ping) {
+  if (ping.commandType === 'grammar') {
+    return `You are a grammar and spelling corrector. Fix all grammar, spelling, and punctuation errors in the provided text. Preserve the original meaning, voice, and style. Do not restructure sentences unless grammatically necessary.
+Respond ONLY with a JSON object — no other text before or after:
+{"revision": "<the corrected text>", "explanation": "<one brief sentence summarizing what you fixed>"}`
+  }
+  if (ping.commandType === 'translate') {
+    const lang = ping.instruction.replace(/^translate to /i, '').replace(/\.$/, '').trim() || 'English'
+    return `You are a professional translator. Translate the provided text to ${lang}. Preserve the original formatting, structure, and tone.
+Respond ONLY with a JSON object — no other text before or after:
+{"revision": "<the translated text>", "explanation": "<one brief sentence noting the target language>"}`
+  }
+  return `You are a precise editor. You only revise the highlighted text passage.
+Respond ONLY with a JSON object — no other text before or after:
+{"revision": "<the revised text>", "explanation": "<one brief sentence explaining what you changed>"}`
+}
+
 function buildMessages(ping) {
   const system = {
     role: 'system',
-    content: `You are a precise editor. You only revise the highlighted text passage.
-Respond ONLY with a JSON object — no other text before or after:
-{"revision": "<the revised text>", "explanation": "<one brief sentence explaining what you changed>"}`,
+    content: getSystemPrompt(ping),
   }
   const initial = {
     role: 'user',

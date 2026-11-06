@@ -395,6 +395,55 @@ body {
   font-size: 0.9rem;
 }
 
+.ping-input-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.slash-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: -10px;
+  right: -10px;
+  background: var(--bg-dark);
+  border: 1px solid #333;
+  border-radius: 6px;
+  overflow: hidden;
+  z-index: 60;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+}
+
+.slash-menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  gap: 8px;
+}
+
+.slash-menu-item--active,
+.slash-menu-item:hover {
+  background: #242424;
+}
+
+.slash-menu-label {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: #e8e8e8;
+  font-weight: 500;
+}
+
+.slash-menu-hint {
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: #666;
+  white-space: nowrap;
+}
+
 /* ─── Inline Chat (in-flow block) ───────────────────── */
 .inline-chat {
   display: block;

@@ -7,6 +7,27 @@ import * as Y from 'yjs'
 const TOPBAR_H = 48
 const TOOLBAR_H = 60
 
+const SLASH_COMMANDS = [
+  { id: 'grammar',   label: 'Grammar & Spelling', hint: '/grammar' },
+  { id: 'translate', label: 'Translate',           hint: '/translate [language]' },
+]
+
+function getFilteredCommands(instr: string) {
+  if (!instr.startsWith('/')) return []
+  const word = instr.slice(1).split(' ')[0].toLowerCase()
+  return SLASH_COMMANDS.filter(c => c.id.startsWith(word))
+}
+
+function resolveSlashCommand(instr: string): { commandType: string; instruction: string } | null {
+  const m = instr.trim().match(/^\/(\w+)(?:\s+(.+))?$/)
+  if (!m) return null
+  const cmd = m[1].toLowerCase()
+  const param = m[2]?.trim()
+  if ('grammar'.startsWith(cmd)) return { commandType: 'grammar', instruction: 'Fix all grammar and spelling errors.' }
+  if ('translate'.startsWith(cmd)) return { commandType: 'translate', instruction: `Translate to ${param || 'English'}.` }
+  return null
+}
+
 interface PingBubbleProps {
   editor: Editor | null
   docId: string
@@ -20,6 +41,7 @@ export default function PingBubble({ editor, docId, ydoc, setPreviewRange, hasOp
   const [active, setActive] = useState(false)
   const [instruction, setInstruction] = useState('')
   const [sending, setSending] = useState(false)
+  const [slashMenuIndex, setSlashMenuIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const pendingFocusRef = useRef(false)
 
@@ -157,11 +179,16 @@ export default function PingBubble({ editor, docId, ydoc, setPreviewRange, hasOp
     const selectedText = editor.state.doc.textBetween(from, to, '\n', '\n').replace(/\n+$/, '')
     const context = editor.getText()
 
+    const slashResolved = resolveSlashCommand(instruction)
+    const finalInstruction = slashResolved?.instruction ?? instruction.trim()
+    const commandType = slashResolved?.commandType ?? null
+
     const pingId = `ping-${Date.now()}`
     const pingMap = ydoc.getMap('pings')
     pingMap.set(pingId, {
       id: pingId,
-      instruction: instruction.trim(),
+      instruction: finalInstruction,
+      ...(commandType ? { commandType } : {}),
       selectedText,
       from,
       to,
@@ -176,6 +203,13 @@ export default function PingBubble({ editor, docId, ydoc, setPreviewRange, hasOp
     setActive(false)
     setSending(false)
     setPreviewRange(null)
+  }
+
+  const filteredCommands = getFilteredCommands(instruction)
+  const selectCommand = (cmd: typeof SLASH_COMMANDS[0]) => {
+    setInstruction(cmd.id === 'grammar' ? '/grammar' : '/translate ')
+    setSlashMenuIndex(0)
+    setTimeout(() => inputRef.current?.focus(), 0)
   }
 
   if (!bubble) return null
@@ -194,14 +228,33 @@ export default function PingBubble({ editor, docId, ydoc, setPreviewRange, hasOp
         hasOpenHunks ? (
           <span className="ping-bubble-blocked">Accept or reject changes first</span>
         ) : (
-          <>
+          <div className="ping-input-wrap">
+            {filteredCommands.length > 0 && (
+              <div className="slash-menu">
+                {filteredCommands.map((cmd, i) => (
+                  <div
+                    key={cmd.id}
+                    className={`slash-menu-item${i === slashMenuIndex ? ' slash-menu-item--active' : ''}`}
+                    onMouseDown={(e) => { e.preventDefault(); selectCommand(cmd) }}
+                  >
+                    <span className="slash-menu-label">{cmd.label}</span>
+                    <span className="slash-menu-hint">{cmd.hint}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <input
               ref={inputRef}
               className="ping-bubble-input"
               placeholder="Instruction for Opponent…"
               value={instruction}
-              onChange={(e) => setInstruction(e.target.value)}
+              onChange={(e) => { setInstruction(e.target.value); setSlashMenuIndex(0) }}
               onKeyDown={(e) => {
+                if (filteredCommands.length > 0) {
+                  if (e.key === 'ArrowDown') { e.preventDefault(); setSlashMenuIndex(i => (i + 1) % filteredCommands.length); return }
+                  if (e.key === 'ArrowUp') { e.preventDefault(); setSlashMenuIndex(i => (i - 1 + filteredCommands.length) % filteredCommands.length); return }
+                  if (e.key === 'Tab') { e.preventDefault(); selectCommand(filteredCommands[slashMenuIndex]); return }
+                }
                 if (e.key === 'Enter') sendPing()
                 if (e.key === 'Escape') { setActive(false); setInstruction(''); setPreviewRange(null) }
               }}
@@ -217,7 +270,7 @@ export default function PingBubble({ editor, docId, ydoc, setPreviewRange, hasOp
                 {sending ? '…' : '→'}
               </button>
             )}
-          </>
+          </div>
         )
       ) : (
         <span className="ping-bubble-hint">Tab or hover</span>
